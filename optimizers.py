@@ -24,8 +24,10 @@ def spsa_grad_estimate_bi(model, image, points, boxes, text, label, loss_fn, ck,
             output1 = model(image, points, boxes, text)
             torch.nn.utils.vector_to_parameters(w_l, model.decoder.parameters())
             output2 = model(image, points, boxes, text)
-            loss1 = loss_fn.forward(output1, label.float())
-            loss2 = loss_fn.forward(output2, label.float())
+            output1 = torch.Tensor(output1).to(label.device)
+            output2 = torch.Tensor(output2).to(label.device)
+            loss1 = loss_fn.forward(output1, label)
+            loss2 = loss_fn.forward(output2, label)
 
             #* parameter update via estimated gradient
             ghat = (loss1 - loss2)/((2*ck)*perturb)

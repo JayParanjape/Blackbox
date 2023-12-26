@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from segment_anything import build_sam, sam_model_registry, SamPredictor, SamAutomaticMaskGenerator
 import clip
+import numpy as np
 
 def get_blackbox(blackbox_config, device):
     if blackbox_config['name']=='SAM':
@@ -20,13 +21,17 @@ class BBox_SAM(nn.Module):
         self.transform = self.prompt_mask_generator.transform
 
     def forward(self, img, point=None, box=None, text=None):
+        # print("debug img size to blackbox: ", img.shape)
         with torch.no_grad():
-            img_size = img.shape[-1]
+            if img.shape[-1]==3:
+                img_size = img.shape[0]
+            else:
+                img_size = img.shape[-1]
             if point==None and box==None and text==None:
                 #automatic case
                 masks = self.automatic_mask_generator.generate(img)
             else:
-                if text:
+                if text[0]!=None:
                     #support for text not provided in SAM API. Simulated here
                     #resize and transform image
                     # print("debug: input img to image encoder: ", img.shape)
@@ -65,8 +70,8 @@ class BBox_SAM(nn.Module):
                 else:
                     self.prompt_mask_generator.set_image(img)
                     #only supports positive points
-                    if point:
-                        points_labels = torch.ones(point.shape[0]).to(self.device)
-                    masks, _,_ = self.prompt_mask_generator.predict(point_coords=point, point_labels=points_labels, box=box)
+                    if point!=None:
+                        points_labels = np.ones((point.shape[0],))
+                    masks, _,_ = self.prompt_mask_generator.predict(point_coords=point.cpu().numpy(), point_labels=points_labels)
 
             return masks

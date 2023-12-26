@@ -10,7 +10,7 @@ class PromptEncoder(nn.Module):
     def __init__(self, config, device='cuda:0') -> None:
         super().__init__()
         self.embedding_size = config['embedding_size']//2
-        self.imput_img_size = config['input_img_size']
+        self.input_img_size = (config['input_img_size'], config['input_img_size'])
         self.device=device
 
         #for point based and bounding box based prompts
@@ -59,26 +59,48 @@ class PromptEncoder(nn.Module):
         sparse_prompt_embeddings = []
         dense_prompt_embeddings = []
         #encode points
-        if points:
-            point_prompt = self.encode_point(points)
-            sparse_prompt_embeddings.append(point_prompt)
+        try:
+            if points[0]!=None:
+                point_prompt = self.encode_point(points)
+                sparse_prompt_embeddings.append(point_prompt)
+        except:
+            if points!=None:
+                point_prompt = self.encode_point(points)
+                sparse_prompt_embeddings.append(point_prompt)
 
         #encode bounding boxes
-        if bboxes:
-            bbox_prompt = self.encode_bb(bboxes)
-            sparse_prompt_embeddings.append(bbox_prompt)
+        try:
+            if bboxes[0]!=None:
+                bbox_prompt = self.encode_bb(bboxes)
+                sparse_prompt_embeddings.append(bbox_prompt)
+        except:
+            if bboxes!=None:
+                bbox_prompt = self.encode_bb(bboxes)
+                sparse_prompt_embeddings.append(bbox_prompt)
+            
 
         #encode mask
-        if masks:
-            mask_prompt = self.encode_mask(masks)
-            dense_prompt_embeddings.append(mask_prompt)
-
+        try:
+            if masks[0]!=None:
+                mask_prompt = self.encode_mask(masks)
+                dense_prompt_embeddings.append(mask_prompt)
+        except:
+            if masks!=None:
+                mask_prompt = self.encode_mask(masks)
+                dense_prompt_embeddings.append(mask_prompt)
+            
         #encode text
-        if text:
-            text_prompt = self.encode_text(text)
-            # print("debug: , encode text shape: ", text_prompt.shape)
-            sparse_prompt_embeddings.append(text_prompt)
-
+        try:
+            if text[0]!=None:
+                text_prompt = self.encode_text(text)
+                # print("debug: , encode text shape: ", text_prompt.shape)
+                sparse_prompt_embeddings.append(text_prompt)
+        except:
+            if text!=None:
+                text_prompt = self.encode_text(text)
+                # print("debug: , encode text shape: ", text_prompt.shape)
+                sparse_prompt_embeddings.append(text_prompt)
+        
         sparse_prompt_embeddings = torch.cat(sparse_prompt_embeddings, dim=0)
         # print("debug: sparse prompt embeddings shape: ", sparse_prompt_embeddings.shape)
         if not masks:

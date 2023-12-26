@@ -55,4 +55,5 @@ train_config:
   batch_size: 4
   Loss: 'dice'
   use_only_text: True
+  use_only_point: False
 

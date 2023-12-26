@@ -4,13 +4,16 @@ from .prompt_encoder import PromptEncoder
 from .blackbox import get_blackbox
 import torch.nn as nn
 import torch
-
+import numpy as np
 
 class FinalModel(nn.Module):
     def __init__(self, encoder_config, decoder_config, blackbox_config, prompt_config, device):
         super().__init__()
         self.encoder = get_encoder(encoder_config, device)
         self.prompt_encoder = PromptEncoder(prompt_config, device=device)
+        #to be set outside function
+        self.data_pixel_mean = None
+        self.data_pixel_std = None
         
         #set some decoder config params based on encoder and prompt encoder
         if encoder_config['name']=='CLIP':
@@ -33,10 +36,13 @@ class FinalModel(nn.Module):
 
     def forward(self, img, point=None, box=None, text=None):
         prompt_embeddings = []
-        for i in range(len(text)):
-            prompt_embeddings_i,_ = self.prompt_encoder(points = point[i], bboxes=box[i], text=text[i])
-            prompt_embeddings.append(prompt_embeddings_i)
-        prompt_embeddings = torch.cat(prompt_embeddings, dim=0)
+        if text[0]!= None:
+            for i in range(len(text)):
+                prompt_embeddings_i,_ = self.prompt_encoder(points = point[i], bboxes=box[i], text=text[i])
+                prompt_embeddings.append(prompt_embeddings_i)
+            prompt_embeddings = torch.cat(prompt_embeddings, dim=0)
+        else:
+            prompt_embeddings,_ = self.prompt_encoder(points = point, bboxes = box, text = text)
 
         img_embeddings = self.encoder.encode_image(img)
         # print("debug: img embeddings shape", img_embeddings.shape)
@@ -50,8 +56,21 @@ class FinalModel(nn.Module):
 
         #add prompt image to image
         sam_img = img + prompt_img
+        #convert image to uint8
+        sam_img = (sam_img*self.data_pixel_std.unsqueeze(0).to(sam_img.device) + self.data_pixel_mean.unsqueeze(0).to(sam_img.device))
+        sam_img = torch.clip(sam_img, 0, 255)
 
         #get output from black box model
+        #point prompt api from sam only supports 1 image at a time.
+        if text[0]==None:
+            if len(sam_img.shape)==4:
+                sam_img = sam_img[0]
+                point = point[0]
+            if sam_img.shape[0]==3:
+                sam_img = sam_img.permute(1,2,0).cpu().numpy()
+            sam_img = sam_img.astype(np.uint8)
+            
+        
         mask = self.blackbox(sam_img, point, box, text)
 
         #this step required since labels hsa only 1 mask always
