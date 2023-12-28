@@ -32,7 +32,6 @@ def main_train(config, pretrained_path, save_path, device):
     data_config = config['data_config']
     train_config = config['train_config']
     
-    #TODO
     dataset_dict, dataloader_dict, _ = get_data(data_config)
 
     #train

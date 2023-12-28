@@ -26,6 +26,7 @@ def spsa_grad_estimate_bi(model, image, points, boxes, text, label, loss_fn, ck,
             output2 = model(image, points, boxes, text)
             output1 = torch.Tensor(output1).to(label.device)
             output2 = torch.Tensor(output2).to(label.device)
+        #     print(f"debug: output shape: {output1.shape} label shape: {label.shape}")
             loss1 = loss_fn.forward(output1, label)
             loss2 = loss_fn.forward(output2, label)
 
@@ -40,4 +41,5 @@ def spsa_grad_estimate_bi(model, image, points, boxes, text, label, loss_fn, ck,
         avg_dice = ((dice_coef(label,output1)+
                 dice_coef(label, output2))/2).item()
 
+        print("Debug: Magnitude of ghat: ", torch.norm(ghat))
         return ghat, loss, avg_dice

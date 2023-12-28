@@ -17,8 +17,8 @@ blackbox_config:
 
 optimizer_config:
   name: 'spsa-gc'
-  momentum: 0.9
-  a: 0.01
+  momentum: 0.4
+  a: 1
   c: 0.01
   o: 1.0
   alpha: 0.4
@@ -51,7 +51,7 @@ data_config:
     use_affine: False
 
 train_config:
-  num_train: 1000
+  num_train: 2000
   batch_size: 4
   Loss: 'dice'
   use_only_text: True

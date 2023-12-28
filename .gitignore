@@ -1,0 +1,5 @@
+*.pth
+saved_models_and_configs
+*.log
+*.png
+*.pyc

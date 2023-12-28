@@ -9,7 +9,7 @@ from data_transforms.glas_transform import GLAS_Transform
 
 
 class GLAS_Dataset(Dataset):
-    def __init__(self, config, is_train=False, shuffle_list = True, apply_norm=True, no_text_mode=False) -> None:
+    def __init__(self, config, is_train=False, shuffle_list = True, apply_norm=True, no_text_mode=False, is_test=False) -> None:
         super().__init__()
         self.root_path = config['root_path']
         self.img_names = []
@@ -17,6 +17,7 @@ class GLAS_Dataset(Dataset):
         self.label_path_list = []
         self.label_list = []
         self.is_train = is_train
+        self.is_test = is_test
         self.label_names = config['label_names']
         self.num_classes = len(self.label_names)
         self.config = config
@@ -43,10 +44,13 @@ class GLAS_Dataset(Dataset):
             imgs_path = os.path.join(self.root_path, 'train')
             labels_path = os.path.join(self.root_path, 'train')
         else:
-            # imgs_path = os.path.join(self.root_path, 'validation')
-            # labels_path = os.path.join(self.root_path, 'validation')
-            imgs_path = os.path.join(self.root_path, 'test')
-            labels_path = os.path.join(self.root_path, 'test')
+            if self.is_test:
+                imgs_path = os.path.join(self.root_path, 'test')
+                labels_path = os.path.join(self.root_path, 'test')
+            else:
+                imgs_path = os.path.join(self.root_path, 'validation')
+                labels_path = os.path.join(self.root_path, 'validation')
+
 
         for img in os.listdir(imgs_path):
             # print(img)

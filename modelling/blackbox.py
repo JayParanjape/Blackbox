@@ -65,6 +65,8 @@ class BBox_SAM(nn.Module):
                     # print("debug: low res masks shape: ", low_res_masks.shape)
                     masks = self.sam_model.postprocess_masks(low_res_masks, (img_size,img_size), (img_size,img_size))
                     # print("debug: masks shape: ", masks.shape)
+                    masks = nn.functional.sigmoid(masks)
+                    # masks = (masks>=0)+0
 
 
                 else:
@@ -72,6 +74,6 @@ class BBox_SAM(nn.Module):
                     #only supports positive points
                     if point!=None:
                         points_labels = np.ones((point.shape[0],))
-                    masks, _,_ = self.prompt_mask_generator.predict(point_coords=point.cpu().numpy(), point_labels=points_labels)
+                    masks, _,_ = self.prompt_mask_generator.predict(point_coords=point.cpu().numpy(), point_labels=points_labels, multimask_output=False)
 
             return masks

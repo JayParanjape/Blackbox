@@ -14,6 +14,7 @@ class FinalModel(nn.Module):
         #to be set outside function
         self.data_pixel_mean = None
         self.data_pixel_std = None
+        self.device = device
         
         #set some decoder config params based on encoder and prompt encoder
         if encoder_config['name']=='CLIP':
@@ -36,7 +37,7 @@ class FinalModel(nn.Module):
 
     def forward(self, img, point=None, box=None, text=None):
         prompt_embeddings = []
-        if text[0]!= None:
+        if text!=None and text[0]!= None:
             for i in range(len(text)):
                 prompt_embeddings_i,_ = self.prompt_encoder(points = point[i], bboxes=box[i], text=text[i])
                 prompt_embeddings.append(prompt_embeddings_i)
