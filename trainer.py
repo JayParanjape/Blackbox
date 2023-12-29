@@ -15,17 +15,22 @@ class Loss_fxn():
             self.losses_list = losses_list
 
     def forward(self, pred, label):
+        tmp_wt = [1,0.001]
         loss = 0
-        for l in self.losses_list:
-            loss += l(pred, label)
+        for i,l in enumerate(self.losses_list):
+            try:
+                loss += (tmp_wt[i]*l(pred, label))
+            except:
+                loss += (tmp_wt[i]*l(pred, label.float()))
         return loss
 
 def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, blackbox_config, optim_config, train_config, device, pretrained_path, save_path):
     #set up logger
     logging.basicConfig(filename=os.path.join(save_path,"training_progress.log"),
-                    format='%(asctime)s %(message)s',
+                    format='%(message)s',
                     filemode='w')
     logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
 
     # tr_dataloader, val_dataloader = iter(dataloader_dict['train']), iter(dataloader_dict['val'])
     tr_dataset, val_dataset = dataset_dict['train'], dataset_dict['val']
@@ -41,6 +46,7 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
     if pretrained_path:
         model.decoder.load_state_dict(torch.load(pretrained_path,map_location=device), strict=True)
     print("debug: model loaded")
+    logger.info("model loaded")
     print(model.decoder)
 
     #define loss function
@@ -49,6 +55,8 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
         losses_list.append(focal_loss)
     if 'dice' in train_config['Loss']:
         losses_list.append(dice_loss)
+    if 'bce' in train_config['Loss']:
+        losses_list.append(nn.BCELoss())
     loss_fxn = Loss_fxn(losses_list)
 
     print("debug: loss loaded")
@@ -124,7 +132,7 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
 
                 ck = optim_config['c']/(i**optim_config['gamma'])
                 ghat, loss, dice = spsa_grad_estimate_bi(model, image, points, boxes, text, label, loss_fxn, ck, optim_config['sp_avg'])
-                logger.info(f"the norm of pseudo gradient is: ", torch.norm(ghat))
+                logger.info("the norm of pseudo gradient is: %s", str(torch.norm(ghat)))
                 if i==1:
                     m = ghat
                 else:
@@ -139,9 +147,9 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
             logger.info(f"Iteration {i}")
             tr_loss, tr_dice = evaluate(tr_dataset, model, train_config, loss_fxn)
             print("Average loss on the tr set: ", tr_loss)
-            logger.info(f"Average loss on the tr set: {tr_loss}")
+            logger.info("Average loss on the tr set: %s", str(tr_loss))
             print("Average dice on the tr set: ", tr_dice)
-            logger.info(f"Average dice on the tr set: {tr_dice}")
+            logger.info("Average dice on the tr set: %s", str(tr_dice))
 
             if tr_loss < best_tr_loss:
                 best_tr_loss = tr_loss

@@ -121,6 +121,7 @@ def main_predict(config, pretrained_path, save_path, device):
             output = model(image, points, boxes, texts)
             output = torch.Tensor(output).to(label.device)
         # print(torch.unique(output))
+        output = (output>=0.5)+0
         dice = dice_coef(label, output)
         dices.append(dice)
         print(dice)

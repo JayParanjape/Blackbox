@@ -74,6 +74,9 @@ class BBox_SAM(nn.Module):
                     #only supports positive points
                     if point!=None:
                         points_labels = np.ones((point.shape[0],))
-                    masks, _,_ = self.prompt_mask_generator.predict(point_coords=point.cpu().numpy(), point_labels=points_labels, multimask_output=False)
+                    masks, _,_ = self.prompt_mask_generator.predict(point_coords=point.cpu().numpy(), point_labels=points_labels, multimask_output=False, return_logits=True)
+
+                    #convert masks to probabilities
+                    masks = nn.functional.sigmoid(torch.Tensor(masks))
 
             return masks
