@@ -15,7 +15,7 @@ class Loss_fxn():
             self.losses_list = losses_list
 
     def forward(self, pred, label):
-        tmp_wt = [1,0.001]
+        tmp_wt = [1,0.1]
         loss = 0
         for i,l in enumerate(self.losses_list):
             try:
@@ -46,8 +46,13 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
     if pretrained_path:
         model.decoder.load_state_dict(torch.load(pretrained_path,map_location=device), strict=True)
     print("debug: model loaded")
+
+    
+
     logger.info("model loaded")
     print(model.decoder)
+    num_params = sum(p.numel() for p in model.decoder.parameters())
+    print("Number of parameters in the decoder: ", num_params)
 
     #define loss function
     losses_list = []
@@ -60,6 +65,15 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
     loss_fxn = Loss_fxn(losses_list)
 
     print("debug: loss loaded")
+
+    #initialized performance
+    with torch.no_grad():
+        tr_loss, tr_dice = evaluate(tr_dataset, model, train_config, loss_fxn)
+        print("Initial Average loss on the tr set: ", tr_loss)
+        logger.info("Initial Average loss on the tr set: %s", str(tr_loss))
+        print("Initial Average dice on the tr set: ", tr_dice)
+        logger.info("Initial Average dice on the tr set: %s", str(tr_dice))
+
     for i in range(1,1+num_training_iters):
         #TODO properly. get datapoint and add batch size
 

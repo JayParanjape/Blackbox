@@ -1,32 +1,54 @@
 import torch 
 import torch.nn as nn
 import numpy as np
-from common import TwoWayTransformer, LayerNorm2d
+from common import TwoWayTransformer, LayerNorm2d, MLP
 
 
 
 def get_decoder(decoder_config, device):
     if decoder_config['name']=='SAM':
-        return SAM_Decoder(decoder_config['transformer_dim'])
+        return SAM_Decoder(decoder_config, device)
     elif decoder_config['name']=='Concat':
         return Concat_Decoder(decoder_config)
 
 class SAM_Decoder(nn.Module):
-    def __init__(self, transformer_dim, device):
+    def __init__(self, decoder_config, device):
         super().__init__()
         self.name = 'sam_decoder'
-        self.transformer_dim = transformer_dim
+        self.transformer_dim = decoder_config['transformer_dim']
         self.device = device
-        self.trasformer = TwoWayTransformer().to(device)
+        self.img_size = decoder_config['img_size']
+
+        #convert any dim img embedding to BXprompt_embed_dimXHXW
+        self.embed_converter = MLP(decoder_config['encoder_dim'], decoder_config['prompt_embed_dim'], decoder_config['prompt_embed_dim'], 1)
+        
+        self.transformer = TwoWayTransformer(
+            depth=2,
+            embedding_dim=decoder_config['prompt_embed_dim'],
+            mlp_dim=2048,
+            num_heads=8,
+        ).to(device)
         # self.mask_tokens = nn.Embedding(self.num_mask_tokens, transformer_dim)
 
         self.output_upscaling = nn.Sequential(
-                    nn.ConvTranspose2d(transformer_dim, transformer_dim // 4, kernel_size=2, stride=2),
-                    LayerNorm2d(transformer_dim // 4),
+                    nn.ConvTranspose2d(self.transformer_dim, self.transformer_dim // 4, kernel_size=2, stride=2),
+                    LayerNorm2d(self.transformer_dim // 4),
                     nn.GELU(),
-                    nn.ConvTranspose2d(transformer_dim // 4, transformer_dim // 8, kernel_size=2, stride=2),
+                    nn.ConvTranspose2d(self.transformer_dim // 4, self.transformer_dim // 4, kernel_size=2, stride=2),
+                    LayerNorm2d(self.transformer_dim // 4),
                     nn.GELU(),
+                    nn.ConvTranspose2d(self.transformer_dim//4, self.transformer_dim // 4, kernel_size=2, stride=2),
+                    LayerNorm2d(self.transformer_dim // 4),
+                    nn.GELU(),
+                    nn.ConvTranspose2d(self.transformer_dim//4, self.transformer_dim // 8, kernel_size=2, stride=2),
+                    LayerNorm2d(self.transformer_dim // 8),
+                    nn.GELU(),
+                    nn.ConvTranspose2d(self.transformer_dim//8, 3, kernel_size=2, stride=2),
+                    # nn.GELU(),
                 ).to(device)
+
+        # self.hypernetwork = MLP(decoder_config['prompt_embed_dim'], self.transformer_dim, self.transformer_dim//8, 3).to(device)
+        print("initialized decoder")
 
     def forward(
         self,
@@ -41,19 +63,43 @@ class SAM_Decoder(nn.Module):
 
         # Expand per-image data in batch direction to be per-mask
         src = image_embeddings
+        b, c, h, w = src.shape
+        #convert image embeddings to prompt embed shape
+        src = self.embed_converter(src.view(b,h,w,c))
+        # print("debug: after embed converter src shape ", src.shape)
+        src = src.view(b, -1, h, w)
+        b, c, h, w = src.shape
 
         # src = src + dense_prompt_embeddings
         pos_src = torch.repeat_interleave(image_pe, tokens.shape[0], dim=0)
         # print("image_pe.shape: ", image_pe.shape)
-        b, c, h, w = src.shape
+        # print("debug: src shape ", src.shape, src.dtype)
+        # print("debug: pos src shape: ", pos_src.shape)
+        # print("debug: tokens shape: ", tokens.shape, tokens.dtype)
 
         # Run the transformer
-        hs, src = self.transformer(src, pos_src, tokens)
+        hs, src = self.transformer(src.float(), pos_src, tokens.float())
+        # print(f"debug: hs shape {hs.shape} src shape {src.shape}")
 
-        mask_tokens_out = hs[:, 1, :]
+        # mask_tokens_out = hs[:, 0, :]
+        # print(f"debug mask tokens shape {mask_tokens_out.shape}")
+        # mask_tokens_out = self.hypernetwork(mask_tokens_out)
+        # print(f"debug mask tokens after hypernet shape {mask_tokens_out.shape}")
+
         # Upscale mask embeddings and predict masks using the mask tokens
-        src = src.transpose(1, 2).view(b, c, h, w)
+        src = src.transpose(1, 2).view(b, -1, h, w)
         out = self.output_upscaling(src)
+        b,c,h,w = out.shape
+        # print(f"debug out shape {out.shape}")
+        # out = (mask_tokens_out @ out.view(b, c, h * w)).view(b, c, h, w)
+
+        #interpolate back to img size
+        out = nn.functional.interpolate(
+                out,
+                (self.img_size, self.img_size),
+                mode="bilinear",
+                align_corners=False,
+            )
         return out        
 
 

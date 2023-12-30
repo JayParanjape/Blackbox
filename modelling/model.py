@@ -22,6 +22,14 @@ class FinalModel(nn.Module):
             decoder_config['prompt_output_dim'] = 517
             #total channels = 1078 = 21 X 49
             decoder_config['decoder_input_dim'] = 21
+        
+        if decoder_config['name']=='SAM':
+            decoder_config['img_size'] = prompt_config['input_img_size']
+            if encoder_config['name']=='CLIP':
+                decoder_config['encoder_dim'] = 512
+            elif encoder_config['name']=='DINO-RESNET50':
+                decoder_config['encoder_dim'] = 2048
+                
 
         #TODO - figure out how to add positional embeddings. One way is through learnable embeddings        
         self.decoder = get_decoder(decoder_config=decoder_config, device=device)

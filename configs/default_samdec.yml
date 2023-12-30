@@ -1,0 +1,60 @@
+encoder_config:
+  name: 'DINO-RESNET50'
+
+decoder_config:
+  name: 'SAM'
+  prompt_embed_dim: 512
+  prompt_channel_num: 5
+  transformer_dim: 512
+
+prompt_encoder_config:
+  embedding_size: 512
+  input_img_size: 224
+
+blackbox_config:
+  name: 'SAM'
+  model_type: 'vit_b'
+  sam_checkpoint: '/home/ubuntu/Desktop/Domain_Adaptation_Project/repos/segment-anything/checkpoints/sam_vit_b_01ec64.pth'
+
+optimizer_config:
+  name: 'spsa-gc'
+  momentum: 0.4
+  a: 0.0001
+  c: 0.01
+  o: 1.0
+  alpha: 0.4
+  gamma: 0.1
+  sp_avg: 5
+
+data_config:
+  name: "GLAS"
+  root_path: '/media/ubuntu/New Volume/jay/GLAS/archive'
+  label_names: ['Glands']
+  label_list: [1]
+  batch_size: 4
+  volume_channel: 2
+  negative_to_positive_ratio: -1
+  use_norm: True
+  no_text_mode: False
+  data_transforms:
+    a_min: 0
+    a_max: 255
+    img_size: 224
+    use_random_crop: False
+    use_rotation: True
+    rotation_angle: 10
+    use_saturation: True
+    saturation: 2
+    use_brightness: True
+    brightness: 2
+    use_horizontal_flip: True
+    use_cjitter: False
+    use_affine: False
+
+train_config:
+  num_train: 2000
+  batch_size: 4
+  Loss: 'dice + bce'
+  use_only_text: True
+  use_only_point: False
+
