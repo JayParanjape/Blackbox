@@ -29,7 +29,16 @@ class BBox_SAM(nn.Module):
                 img_size = img.shape[-1]
             if point==None and box==None and text==None:
                 #automatic case
-                masks = self.automatic_mask_generator.generate(img)
+                auto_masks = self.automatic_mask_generator.generate(img)
+                # print("debug auto case masks shape ", len(auto_masks))
+                #masks shape N X H X W
+                masks = np.zeros((img_size,img_size))
+                for am in (auto_masks):
+                    masks = (masks + am['segmentation'])
+                    # print("predicted iou of this mask: ", am['predicted_iou'])
+                masks = masks>0 + 0
+                # print("debug: masks shape final: ", masks.shape)
+                masks = torch.Tensor(masks).unsqueeze(0)
             else:
                 if text[0]!=None:
                     #support for text not provided in SAM API. Simulated here

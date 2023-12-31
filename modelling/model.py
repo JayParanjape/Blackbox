@@ -15,6 +15,7 @@ class FinalModel(nn.Module):
         self.data_pixel_mean = None
         self.data_pixel_std = None
         self.device = device
+        self.use_sam_auto_mode = blackbox_config['auto_mode']
         
         #set some decoder config params based on encoder and prompt encoder
         if encoder_config['name']=='CLIP':
@@ -65,13 +66,14 @@ class FinalModel(nn.Module):
 
         #add prompt image to image
         sam_img = img + prompt_img
+        # print(f"Debug img sanity checks: img max and min {torch.max(img)} {torch.min(img)} and prompt img max min {torch.max(prompt_img)} {torch.min(prompt_img)}")
         #convert image to uint8
         sam_img = (sam_img*self.data_pixel_std.unsqueeze(0).to(sam_img.device) + self.data_pixel_mean.unsqueeze(0).to(sam_img.device))
         sam_img = torch.clip(sam_img, 0, 255)
 
         #get output from black box model
-        #point prompt api from sam only supports 1 image at a time.
-        if text[0]==None:
+        #point prompt api and auto mode api from sam only supports 1 image at a time.
+        if text[0]==None or self.use_sam_auto_mode:
             if len(sam_img.shape)==4:
                 sam_img = sam_img[0]
                 point = point[0]
@@ -80,7 +82,10 @@ class FinalModel(nn.Module):
             sam_img = sam_img.astype(np.uint8)
             
         
-        mask = self.blackbox(sam_img, point, box, text)
+        if self.use_sam_auto_mode:
+            mask = self.blackbox(sam_img, None, None, None)
+        else:
+            mask = self.blackbox(sam_img, point, box, text)
 
         #this step required since labels hsa only 1 mask always
         if len(mask.shape)==4:

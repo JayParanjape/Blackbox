@@ -15,6 +15,7 @@ blackbox_config:
   name: 'SAM'
   model_type: 'vit_b'
   sam_checkpoint: '/home/ubuntu/Desktop/Domain_Adaptation_Project/repos/segment-anything/checkpoints/sam_vit_b_01ec64.pth'
+  auto_mode: False
 
 optimizer_config:
   name: 'spsa-gc'
