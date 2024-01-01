@@ -137,6 +137,8 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
             points = torch.cat(points,dim=0)
         # print("debug: points shape ",points.shape)
         w = torch.nn.utils.parameters_to_vector(model.decoder.parameters())
+        if i==1:
+            w *= 0
 
 
         if optim_config['name']=='spsa-gc':
@@ -146,6 +148,8 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
 
                 ck = optim_config['c']/(i**optim_config['gamma'])
                 ghat, loss, dice = spsa_grad_estimate_bi(model, image, points, boxes, text, label, loss_fxn, ck, optim_config['sp_avg'])
+                if ghat==0:
+                    optim_config['c'] *= 10
                 logger.info("the norm of pseudo gradient is: %s", str(torch.norm(ghat)))
                 if i==1:
                     m = ghat
