@@ -111,6 +111,7 @@ class Concat_Decoder(nn.Module):
         self.prompt_input_dim = decoder_config['prompt_input_dim']
         self.dec_input = decoder_config['decoder_input_dim']
         self.prompt_output_dim = decoder_config['prompt_output_dim']
+        self.final_img_size = decoder_config['img_size']
         self.Prompt_Embedding_Converter = nn.Sequential(
             nn.Linear(self.prompt_input_dim, self.prompt_output_dim),
             nn.LayerNorm(self.prompt_output_dim),
@@ -152,13 +153,15 @@ class Concat_Decoder(nn.Module):
         # print("debug: prompt embeds dtype ", prompt_embeds.dtype)
         prompt_embeds = self.Prompt_Embedding_Converter(prompt_embeds)
         concat_img = torch.cat([img_embeds, prompt_embeds], dim=-1)
-        #concat img dim: Bd1 X (multiple of 49)
-        concat_img = concat_img.view(b2*d1,-1,7,7)
+        
+        #concat img dim: Bd1 X (multiple of (img_size/32)**2)
+        unit = self.final_img_size//32
+        concat_img = concat_img.view(b2*d1,-1,unit,unit)
 
         prompt_img = self.decoder(concat_img)
         # print("debug: prompt img shape: ", prompt_img.shape)
         #average across all prompts
-        prompt_img = prompt_img.view(b2,d1,3,224,224)
+        prompt_img = prompt_img.view(b2,d1,3,self.final_img_size,self.final_img_size)
         prompt_img = torch.mean(prompt_img, dim=1)
         return prompt_img
 

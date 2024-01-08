@@ -35,7 +35,6 @@ class BBox_SAM(nn.Module):
                 masks = np.zeros((img_size,img_size))
                 for am in (auto_masks):
                     masks = (masks + am['segmentation'])
-                    # print("predicted iou of this mask: ", am['predicted_iou'])
                 masks = masks>0 + 0
                 # print("debug: masks shape final: ", masks.shape)
                 masks = torch.Tensor(masks).unsqueeze(0)

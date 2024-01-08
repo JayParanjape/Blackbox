@@ -1,5 +1,28 @@
 import torch
 from utils import *
+import pyswarms as ps
+
+def global_swarm(model, optimizer, image, points, boxes, text, label, loss_fn, n_particles,options, num_iters=1000):
+    w = torch.nn.utils.parameters_to_vector(model.decoder.parameters())
+    N_params = w.shape[0]
+
+    def forward_prop(params):
+        torch.nn.utils.vector_to_parameters(torch.Tensor(params).to(model.device), model.decoder.parameters())
+        output_probs = model(image, points, boxes, text)
+        # print(output_probs.device)
+        # print(label.device)
+        loss = loss_fn.forward(torch.Tensor(output_probs).to(label.device), label)
+        return loss.cpu().numpy()
+
+    def f(x):
+        n_particles = x.shape[0]
+        j = [forward_prop(x[i]) for i in range(n_particles)]
+        return j
+
+    cost, pos = optimizer.optimize(f, iters=num_iters)
+    torch.nn.utils.vector_to_parameters(torch.Tensor(pos).to(model.device), model.decoder.parameters())
+
+    return cost,pos
 
 def spsa_grad_estimate_bi(model, image, points, boxes, text, label, loss_fn, ck, sp_avg):
         #* repeat k times and average them for stabilizing

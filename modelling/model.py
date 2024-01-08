@@ -18,14 +18,14 @@ class FinalModel(nn.Module):
         self.use_sam_auto_mode = blackbox_config['auto_mode']
         
         #set some decoder config params based on encoder and prompt encoder
-        if encoder_config['name']=='CLIP':
-            decoder_config['prompt_input_dim'] = 512
-            decoder_config['prompt_output_dim'] = 517
-            #total channels = 1078 = 21 X 49
-            decoder_config['decoder_input_dim'] = 21
+        # if encoder_config['name']=='CLIP':
+        decoder_config['prompt_input_dim'] = prompt_config['embedding_size']
+        decoder_config['prompt_output_dim'] = decoder_config['prompt_output_dim']
+        #total channels = 1078 = 21 X 49
+        decoder_config['decoder_input_dim'] = decoder_config['decoder_input_dim']
+        decoder_config['img_size'] = prompt_config['input_img_size']
         
         if decoder_config['name']=='SAM':
-            decoder_config['img_size'] = prompt_config['input_img_size']
             if encoder_config['name']=='CLIP':
                 decoder_config['encoder_dim'] = 512
             elif encoder_config['name']=='DINO-RESNET50':
@@ -66,13 +66,12 @@ class FinalModel(nn.Module):
 
         #add prompt image to image
         sam_img = img + prompt_img
-        # print(f"Debug img sanity checks: img max and min {torch.max(img)} {torch.min(img)} and prompt img max min {torch.max(prompt_img)} {torch.min(prompt_img)}")
         #convert image to uint8
         sam_img = (sam_img*self.data_pixel_std.unsqueeze(0).to(sam_img.device) + self.data_pixel_mean.unsqueeze(0).to(sam_img.device))
         sam_img = torch.clip(sam_img, 0, 255)
 
         #get output from black box model
-        #point prompt api and auto mode api from sam only supports 1 image at a time.
+        #point prompt api from sam only supports 1 image at a time.
         if text[0]==None or self.use_sam_auto_mode:
             if len(sam_img.shape)==4:
                 sam_img = sam_img[0]

@@ -24,6 +24,7 @@ class Clip_Encoder(nn.Module):
         self.clip_model, _  = clip.load("ViT-B/32", device=device)
 
     def encode_image(self, img):
+        # self.clip_model.image_resolution = img.shape[-1] if img.shape[-1]!=3 else img.shape[1]
         return self.clip_model.encode_image(img)
 
 class ViT_Encoder():
@@ -35,7 +36,7 @@ class Dino_Resnet50_Encoder(nn.Module):
         self.backbone = ResNetModel.from_pretrained("Ramos-Ramos/dino-resnet-50").to(device)
         self.embed_dim = 2048
     
-    def encode_image(self, img, perform_pool=False):
+    def encode_image(self, img, perform_pool=True):
         out = self.backbone(img).last_hidden_state
         b,c,h,w = out.shape
         #out shape B X 2048 X 7 X 7

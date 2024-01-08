@@ -16,8 +16,8 @@ def get_data(data_config):
         dataset_sizes['val'] = len(dataset_dict['val'])
         dataset_sizes['test'] = len(dataset_dict['test'])
 
-        dataloader_dict['train'] = DataLoader(dataset_dict['train'], data_config['batch_size'], shuffle=True)
-        dataloader_dict['val'] = DataLoader(dataset_dict['val'], data_config['batch_size'], shuffle=True)
+        # dataloader_dict['train'] = DataLoader(dataset_dict['train'], data_config['batch_size'], shuffle=True)
+        # dataloader_dict['val'] = DataLoader(dataset_dict['val'], data_config['batch_size'], shuffle=True)
 
     elif data_config['name']=='KVASIRSEG':
         dataset_dict['train'] = KVASIRSEG_Dataset(data_config, shuffle_list=True, is_train=True, apply_norm=data_config['use_norm'], no_text_mode=data_config['no_text_mode'])
@@ -28,8 +28,8 @@ def get_data(data_config):
         dataset_sizes['val'] = len(dataset_dict['val'])
         dataset_sizes['test'] = len(dataset_dict['test'])
 
-        dataloader_dict['train'] = DataLoader(dataset_dict['train'], data_config['batch_size'], shuffle=True)
-        dataloader_dict['val'] = DataLoader(dataset_dict['val'], data_config['batch_size'], shuffle=True)
+        # dataloader_dict['train'] = DataLoader(dataset_dict['train'], data_config['batch_size'], shuffle=True)
+        # dataloader_dict['val'] = DataLoader(dataset_dict['val'], data_config['batch_size'], shuffle=True)
 
 
 
