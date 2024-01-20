@@ -1,6 +1,6 @@
 import torch
 from utils import *
-import pyswarms as ps
+# import pyswarms as ps
 
 def global_swarm(model, optimizer, image, points, boxes, text, label, loss_fn, n_particles,options, num_iters=1000):
     w = torch.nn.utils.parameters_to_vector(model.decoder.parameters())
@@ -24,6 +24,26 @@ def global_swarm(model, optimizer, image, points, boxes, text, label, loss_fn, n
 
     return cost,pos
 
+def get_output(model, image, points, boxes, text):
+    if not model.use_sam_actual:
+        return model(image, points, boxes, text)
+    else:
+        if len(image.shape)==3:
+            return model(image, points, boxes, text)
+        else:
+            ret = []
+            for i in range(image.shape[0]):
+                sam_img = image[i].unsqueeze(0)
+                sam_points = points[i].unsqueeze(0) if points!=None else None
+                # print("debug: sam_img shape: ",sam_img.shape)
+                # print("debug: sam_points shape: ",sam_points.shape)
+                sam_out = model(sam_img, sam_points, boxes, text)
+                ret.append(sam_out)
+            ret = torch.cat(ret,dim=0).to(model.device)
+            # print("debug: ret shape: ", ret.shape)
+            return ret
+                
+
 def spsa_grad_estimate_bi(model, image, points, boxes, text, label, loss_fn, ck, sp_avg):
         #* repeat k times and average them for stabilizing
         ghats = []
@@ -44,9 +64,12 @@ def spsa_grad_estimate_bi(model, image, points, boxes, text, label, loss_fn, ck,
             w_r = w + ck*perturb
             w_l = w - ck*perturb
             torch.nn.utils.vector_to_parameters(w_r, model.decoder.parameters())
-            output1 = model(image, points, boxes, text)
+            # output1 = model(image, points, boxes, text)
+            output1 = get_output(model, image, points, boxes, text)
             torch.nn.utils.vector_to_parameters(w_l, model.decoder.parameters())
-            output2 = model(image, points, boxes, text)
+            # output2 = model(image, points, boxes, text)
+            output2 = get_output(model, image, points, boxes, text)
+
             output1 = torch.Tensor(output1).to(label.device)
             output2 = torch.Tensor(output2).to(label.device)
         #     print(f"debug: output shape: {output1.shape} label shape: {label.shape}")

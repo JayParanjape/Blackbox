@@ -16,6 +16,7 @@ class FinalModel(nn.Module):
         self.data_pixel_std = None
         self.device = device
         self.use_sam_auto_mode = blackbox_config['auto_mode']
+        self.use_sam_actual = blackbox_config['use_sam_actual']
         
         #set some decoder config params based on encoder and prompt encoder
         # if encoder_config['name']=='CLIP':
@@ -46,6 +47,7 @@ class FinalModel(nn.Module):
 
     def forward(self, img, point=None, box=None, text=None):
         prompt_embeddings = []
+        use_sam_actual = self.use_sam_actual
         if text!=None and text[0]!= None:
             for i in range(len(text)):
                 prompt_embeddings_i,_ = self.prompt_encoder(points = point[i], bboxes=box[i], text=text[i])
@@ -72,7 +74,9 @@ class FinalModel(nn.Module):
 
         #get output from black box model
         #point prompt api from sam only supports 1 image at a time.
-        if text[0]==None or self.use_sam_auto_mode:
+        bs = img.shape[0]
+        #TODO need cleaner condition
+        if use_sam_actual:
             if len(sam_img.shape)==4:
                 sam_img = sam_img[0]
                 point = point[0]
@@ -82,9 +86,9 @@ class FinalModel(nn.Module):
             
         
         if self.use_sam_auto_mode:
-            mask = self.blackbox(sam_img, None, None, None)
+            mask = self.blackbox(sam_img, None, None, None, bs, use_sam_actual=True)
         else:
-            mask = self.blackbox(sam_img, point, box, text)
+            mask = self.blackbox(sam_img, point, box, text, bs, use_sam_actual=use_sam_actual)
 
         #this step required since labels hsa only 1 mask always
         if len(mask.shape)==4:

@@ -6,6 +6,8 @@ import numpy as np
 import torch
 import random
 import logging
+# import pyswarms as ps
+
 
 class Loss_fxn():
     def __init__(self, losses_list=[]):
@@ -15,7 +17,7 @@ class Loss_fxn():
             self.losses_list = losses_list
 
     def forward(self, pred, label):
-        tmp_wt = [1,0.1]
+        tmp_wt = [1,1]
         loss = 0
         for i,l in enumerate(self.losses_list):
             try:
@@ -65,6 +67,13 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
     loss_fxn = Loss_fxn(losses_list)
 
     print("debug: loss loaded")
+
+    if optim_config['name'] == 'global_swarm':
+        w = torch.nn.utils.parameters_to_vector(model.decoder.parameters())
+        N_params = w.shape[0]
+        optimizer = ps.single.GlobalBestPSO(n_particles=optim_config['num_particles'], dimensions=N_params, options=optim_config['options'])
+
+        print("Debug:  optimizer loaded")
 
     #initialized performance
     with torch.no_grad():
@@ -138,8 +147,7 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
         # print("debug: points shape ",points.shape)
         w = torch.nn.utils.parameters_to_vector(model.decoder.parameters())
         if i==1:
-            w *= 0
-
+            w = w*0
 
         if optim_config['name']=='spsa-gc':
             with torch.no_grad():
@@ -148,7 +156,7 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
 
                 ck = optim_config['c']/(i**optim_config['gamma'])
                 ghat, loss, dice = spsa_grad_estimate_bi(model, image, points, boxes, text, label, loss_fxn, ck, optim_config['sp_avg'])
-                if ghat==0:
+                if torch.norm(ghat)==0:
                     optim_config['c'] *= 10
                 logger.info("the norm of pseudo gradient is: %s", str(torch.norm(ghat)))
                 if i==1:
@@ -158,6 +166,10 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
                 accum_ghat = ghat + optim_config['momentum']*m
                 w = w - lr*accum_ghat
                 torch.nn.utils.vector_to_parameters(w, model.decoder.parameters())
+        elif optim_config['name']=='global_swarm':
+            with torch.no_grad():
+                cost, _ = global_swarm(model, optimizer, image, points, boxes, text, label, loss_fxn, optim_config['num_particles'], optim_config['options'], num_iters=optim_config['swarm_iters'])
+
 
         # print(f"Iteration: {i}, Loss: {loss}, dice: {dice}")
         if i%5 == 0:
@@ -236,7 +248,7 @@ def evaluate(val_dataset, model, train_config, loss_fxn):
                 texts.append(text)
 
             if train_config['use_only_point']:
-                points = torch.cat(points,dim=0)
+                points = torch.cat(points,dim=0).to(image.device)
 
             output = model(image, points, boxes, texts)
             output = torch.Tensor(output).to(label.device)
