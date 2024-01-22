@@ -112,6 +112,16 @@ class Concat_Decoder(nn.Module):
         self.dec_input = decoder_config['decoder_input_dim']
         self.prompt_output_dim = decoder_config['prompt_output_dim']
         self.final_img_size = decoder_config['img_size']
+        self.auto_sam = decoder_config['auto_mode'] 
+        
+        #for auto case: 
+        if self.auto_sam:
+            try:
+                unit = self.final_img_size//32
+                self.trainable_parameter = nn.Parameter(torch.zeros((self.dec_input-self.prompt_input_dim, unit, unit)))
+            except:
+                pass
+        # else:
         self.Prompt_Embedding_Converter = nn.Sequential(
             nn.Linear(self.prompt_input_dim, self.prompt_output_dim),
             nn.LayerNorm(self.prompt_output_dim),
@@ -143,25 +153,32 @@ class Concat_Decoder(nn.Module):
         ).to(device)
 
     def forward(self, img_embeds, prompt_embeds):
-        #img embeds: B X C
+        #img embeds: B X C or BXCXdXd
         #prompt_embeds: B X d1 X d2
-        b,c = img_embeds.shape
-        b2, d1,d2 = prompt_embeds.shape
-        assert(b==b2)
-        img_embeds = img_embeds.repeat(d1,1)
-        prompt_embeds = prompt_embeds.view(b2*d1,d2).float()
-        # print("debug: prompt embeds dtype ", prompt_embeds.dtype)
-        prompt_embeds = self.Prompt_Embedding_Converter(prompt_embeds)
-        concat_img = torch.cat([img_embeds, prompt_embeds], dim=-1)
-        
-        #concat img dim: Bd1 X (multiple of (img_size/32)**2)
-        unit = self.final_img_size//32
-        concat_img = concat_img.view(b2*d1,-1,unit,unit)
+        if len(img_embeds.shape)==4:
+            b,c,d1,d2 = img_embeds.shape
+            concat_img = torch.cat([img_embeds, self.trainable_parameter.repeat(b,1,1,1)], dim=1)
+            prompt_img = self.decoder(concat_img)
+        else:
+            b,c = img_embeds.shape
+            b2, d1,d2 = prompt_embeds.shape
+            # print("Debug: prompt embeds shape: ", prompt_embeds.shape)
+            assert(b==b2)
+            img_embeds = img_embeds.repeat(d1,1)
+            prompt_embeds = prompt_embeds.view(b2*d1,d2).float()
+            # print("debug: prompt embeds dtype ", prompt_embeds.dtype)
+            prompt_embeds = self.Prompt_Embedding_Converter(prompt_embeds)
+            concat_img = torch.cat([img_embeds, prompt_embeds], dim=-1)
+            
+            #concat img dim: Bd1 X (multiple of (img_size/32)**2)
+            unit = self.final_img_size//32
+            concat_img = concat_img.view(b2*d1,-1,unit,unit)
 
-        prompt_img = self.decoder(concat_img)
-        # print("debug: prompt img shape: ", prompt_img.shape)
-        #average across all prompts
-        prompt_img = prompt_img.view(b2,d1,3,self.final_img_size,self.final_img_size)
-        prompt_img = torch.mean(prompt_img, dim=1)
+            prompt_img = self.decoder(concat_img)
+            # print("debug: prompt img shape: ", prompt_img.shape)
+            #average across all prompts
+            prompt_img = prompt_img.view(b2,d1,3,self.final_img_size,self.final_img_size)
+            prompt_img = torch.mean(prompt_img, dim=1)
+        
         return prompt_img
 

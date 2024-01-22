@@ -28,7 +28,7 @@ class BBox_SAM(nn.Module):
                 img_size = img.shape[1]
             else:
                 img_size = img.shape[-1]
-            if point==None and box==None and text==None and bs==1:
+            if point==None and box==None and text==None:
                 #automatic case
                 auto_masks = self.automatic_mask_generator.generate(img)
                 # print("debug auto case masks shape ", len(auto_masks))

@@ -77,11 +77,19 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
 
     #initialized performance
     with torch.no_grad():
-        tr_loss, tr_dice = evaluate(tr_dataset, model, train_config, loss_fxn)
-        print("Initial Average loss on the tr set: ", tr_loss)
-        logger.info("Initial Average loss on the tr set: %s", str(tr_loss))
-        print("Initial Average dice on the tr set: ", tr_dice)
-        logger.info("Initial Average dice on the tr set: %s", str(tr_dice))
+        w = torch.nn.utils.parameters_to_vector(model.decoder.parameters())
+        w *= 0
+        torch.nn.utils.vector_to_parameters(w, model.decoder.parameters())
+        # tr_loss, tr_dice = evaluate(tr_dataset, model, train_config, loss_fxn)
+        # print("Initial Average loss on the tr set: ", tr_loss)
+        # logger.info("Initial Average loss on the tr set: %s", str(tr_loss))
+        # print("Initial Average dice on the tr set: ", tr_dice)
+        # logger.info("Initial Average dice on the tr set: %s", str(tr_dice))
+
+    geass = train_config['use_geass']
+    strike = 0
+    cooldown = 0
+    geass_req = 0.001 * num_params
 
     for i in range(1,1+num_training_iters):
         #TODO properly. get datapoint and add batch size
@@ -130,7 +138,7 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
                     elif choice==2:
                         point, text_j = None, None
                     else:
-                        point, box = None
+                        point, box = None, None
                     points.append(point)
                     boxes.append(box)
                     text.append(text_j)
@@ -153,8 +161,13 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
             with torch.no_grad():
                 # lr = optim_config['a']/((i + optim_config['o'])**optim_config['alpha'])
                 lr = optim_config['a']*(0.33**((i//300)))
+                lr = lr*train_config['geass_lr_multiplier'] if cooldown>0 else lr
 
                 ck = optim_config['c']/(i**optim_config['gamma'])
+                ck = ck*train_config['geass_ck_multiplier'] if cooldown>0 else ck
+
+                momentum = 0 if cooldown>0 else optim_config['momentum']
+
                 ghat, loss, dice = spsa_grad_estimate_bi(model, image, points, boxes, text, label, loss_fxn, ck, optim_config['sp_avg'])
                 if torch.norm(ghat)==0:
                     optim_config['c'] *= 10
@@ -162,10 +175,28 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
                 if i==1:
                     m = ghat
                 else:
-                    m = optim_config['momentum']*m + ghat
-                accum_ghat = ghat + optim_config['momentum']*m
+                    m = momentum*m + ghat
+                accum_ghat = ghat + momentum*m
+                logger.info("the norm of pseudo accum gradient is: %s", str(torch.norm(accum_ghat)))
+                print("the norm of pseudo accum gradient is: %s", str(torch.norm(accum_ghat)))
                 w = w - lr*accum_ghat
                 torch.nn.utils.vector_to_parameters(w, model.decoder.parameters())
+
+                if cooldown>0:
+                    cooldown -= 1
+                    if cooldown == 0:
+                        print("Deactivating Geass...")
+
+                if torch.norm(ghat)<geass_req:
+                    strike += 1
+                else:
+                    strike = 0
+
+                if geass and strike>=10:
+                    strike = 0
+                    cooldown = 2
+                    print(f"Activating Geass... New ck = {ck*train_config['geass_ck_multiplier']} New lr = {lr*train_config['geass_lr_multiplier']}")
+
         elif optim_config['name']=='global_swarm':
             with torch.no_grad():
                 cost, _ = global_swarm(model, optimizer, image, points, boxes, text, label, loss_fxn, optim_config['num_particles'], optim_config['options'], num_iters=optim_config['swarm_iters'])
@@ -239,7 +270,7 @@ def evaluate(val_dataset, model, train_config, loss_fxn):
                     elif choice==2:
                         point, text = None, None
                     else:
-                        point, box = None
+                        point, box = None, None
                     points.append(point)
                     boxes.append(box)
             else:

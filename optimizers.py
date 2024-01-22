@@ -34,10 +34,17 @@ def get_output(model, image, points, boxes, text):
             ret = []
             for i in range(image.shape[0]):
                 sam_img = image[i].unsqueeze(0)
-                sam_points = points[i].unsqueeze(0) if points!=None else None
+                if not model.use_sam_auto_mode:
+                    sam_points = points[i].unsqueeze(0) if points!=None else None
+                else:
+                    sam_points = None
                 # print("debug: sam_img shape: ",sam_img.shape)
                 # print("debug: sam_points shape: ",sam_points.shape)
-                sam_out = model(sam_img, sam_points, boxes, text)
+                if text!= None:
+                    sam_text = [text[i]]
+                else:
+                    sam_text = None
+                sam_out = model(sam_img, sam_points, boxes, sam_text)
                 ret.append(sam_out)
             ret = torch.cat(ret,dim=0).to(model.device)
             # print("debug: ret shape: ", ret.shape)

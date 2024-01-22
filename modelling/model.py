@@ -24,6 +24,7 @@ class FinalModel(nn.Module):
         decoder_config['prompt_output_dim'] = decoder_config['prompt_output_dim']
         #total channels = 1078 = 21 X 49
         decoder_config['decoder_input_dim'] = decoder_config['decoder_input_dim']
+        decoder_config['auto_mode'] = blackbox_config['auto_mode']
         decoder_config['img_size'] = prompt_config['input_img_size']
         
         if decoder_config['name']=='SAM':
@@ -48,15 +49,18 @@ class FinalModel(nn.Module):
     def forward(self, img, point=None, box=None, text=None):
         prompt_embeddings = []
         use_sam_actual = self.use_sam_actual
+        # if self.use_sam_auto_mode:
+        #     prompt_embeddings=None
+        # else:
         if text!=None and text[0]!= None:
             for i in range(len(text)):
-                prompt_embeddings_i,_ = self.prompt_encoder(points = point[i], bboxes=box[i], text=text[i])
+                prompt_embeddings_i,_ = self.prompt_encoder(points = None, bboxes=None, text=text[i])
                 prompt_embeddings.append(prompt_embeddings_i)
             prompt_embeddings = torch.cat(prompt_embeddings, dim=0)
         else:
             prompt_embeddings,_ = self.prompt_encoder(points = point, bboxes = box, text = text)
 
-        img_embeddings = self.encoder.encode_image(img)
+        img_embeddings = self.encoder.encode_image(img, perform_pool= not self.use_sam_auto_mode)
         # print("debug: img embeddings shape", img_embeddings.shape)
         # print("debug: prompt embeddings shape", prompt_embeddings.shape)
         
@@ -79,7 +83,11 @@ class FinalModel(nn.Module):
         if use_sam_actual:
             if len(sam_img.shape)==4:
                 sam_img = sam_img[0]
-                point = point[0]
+                try:
+                    point = point[0]
+                except:
+                    pass
+
             if sam_img.shape[0]==3:
                 sam_img = sam_img.permute(1,2,0).cpu().numpy()
             sam_img = sam_img.astype(np.uint8)
