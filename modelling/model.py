@@ -46,7 +46,7 @@ class FinalModel(nn.Module):
         for i in self.prompt_encoder.parameters():
             i.requires_grad = False
 
-    def forward(self, img, point=None, box=None, text=None):
+    def forward(self, img, point=None, box=None, text=None, return_sam_img = False):
         prompt_embeddings = []
         use_sam_actual = self.use_sam_actual
         # if self.use_sam_auto_mode:
@@ -76,6 +76,11 @@ class FinalModel(nn.Module):
         sam_img = (sam_img*self.data_pixel_std.unsqueeze(0).to(sam_img.device) + self.data_pixel_mean.unsqueeze(0).to(sam_img.device))
         sam_img = torch.clip(sam_img, 0, 255)
 
+        diff_img = (prompt_img*self.data_pixel_std.unsqueeze(0).to(sam_img.device) + self.data_pixel_mean.unsqueeze(0).to(sam_img.device))
+        diff_img = torch.clip(diff_img, 0, 255)
+        diff_img = diff_img[0].permute(1,2,0).cpu().numpy().astype(np.uint8)
+
+
         #get output from black box model
         #point prompt api from sam only supports 1 image at a time.
         bs = img.shape[0]
@@ -101,5 +106,8 @@ class FinalModel(nn.Module):
         #this step required since labels hsa only 1 mask always
         if len(mask.shape)==4:
             mask = mask[:,0,:,:]
+
+        if return_sam_img:
+            return mask, sam_img, diff_img
 
         return mask

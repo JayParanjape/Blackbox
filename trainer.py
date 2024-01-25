@@ -76,10 +76,10 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
         print("Debug:  optimizer loaded")
 
     #initialized performance
-    with torch.no_grad():
-        w = torch.nn.utils.parameters_to_vector(model.decoder.parameters())
-        w *= 0
-        torch.nn.utils.vector_to_parameters(w, model.decoder.parameters())
+    # with torch.no_grad():
+        # w = torch.nn.utils.parameters_to_vector(model.decoder.parameters())
+        # w *= 0
+        # torch.nn.utils.vector_to_parameters(w, model.decoder.parameters())
         # tr_loss, tr_dice = evaluate(tr_dataset, model, train_config, loss_fxn)
         # print("Initial Average loss on the tr set: ", tr_loss)
         # logger.info("Initial Average loss on the tr set: %s", str(tr_loss))
@@ -154,7 +154,7 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
             points = torch.cat(points,dim=0)
         # print("debug: points shape ",points.shape)
         w = torch.nn.utils.parameters_to_vector(model.decoder.parameters())
-        if i==1:
+        if i==1 and train_config['Zero_Init']:
             w = w*0
 
         if optim_config['name']=='spsa-gc':
