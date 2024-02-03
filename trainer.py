@@ -77,14 +77,15 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
 
     #initialized performance
     # with torch.no_grad():
-        # w = torch.nn.utils.parameters_to_vector(model.decoder.parameters())
-        # w *= 0
-        # torch.nn.utils.vector_to_parameters(w, model.decoder.parameters())
-        # tr_loss, tr_dice = evaluate(tr_dataset, model, train_config, loss_fxn)
-        # print("Initial Average loss on the tr set: ", tr_loss)
-        # logger.info("Initial Average loss on the tr set: %s", str(tr_loss))
-        # print("Initial Average dice on the tr set: ", tr_dice)
-        # logger.info("Initial Average dice on the tr set: %s", str(tr_dice))
+    #     w1 = torch.nn.utils.parameters_to_vector(model.decoder.parameters())
+    #     w = w1*0
+    #     torch.nn.utils.vector_to_parameters(w, model.decoder.parameters())
+    #     tr_loss, tr_dice = evaluate(tr_dataset, model, train_config, loss_fxn)
+    #     print("Initial Average loss on the tr set: ", tr_loss)
+    #     logger.info("Initial Average loss on the tr set: %s", str(tr_loss))
+    #     print("Initial Average dice on the tr set: ", tr_dice)
+    #     logger.info("Initial Average dice on the tr set: %s", str(tr_dice))
+    #     torch.nn.utils.vector_to_parameters(w1, model.decoder.parameters())
 
     geass = train_config['use_geass']
     strike = 0

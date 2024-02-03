@@ -4,3 +4,4 @@ saved_models_and_configs
 *.png
 *.pyc
 __pycache__
+**/*.pyc
