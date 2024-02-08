@@ -104,6 +104,7 @@ class Endovis_Dataset(Dataset):
             #convert all grayscale pixels due to resizing back to 0, 1
             label = (label>=0.5)+0
             label = label[0]
+            h,w = label.shape
 
             if self.is_test:
                 label_name = self.label_list[index]
