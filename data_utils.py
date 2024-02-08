@@ -5,8 +5,11 @@ from datasets.refuge import Refuge_Dataset
 from datasets.rite import RITE_Dataset
 from datasets.endovis import Endovis_Dataset
 from torch.utils.data import DataLoader
+# import sys
+# sys.path.append('../endovis17')
 
 def get_data(data_config):
+    print(data_config)
     dataset_dict = {}
     dataset_sizes = {}
     dataloader_dict = {}

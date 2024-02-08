@@ -54,10 +54,11 @@ class Endovis_Dataset(Dataset):
             else:
                 csv_file = os.path.join(self.root_path, 'val.csv')
         df = pd.read_csv(csv_file)
+        root_path = "/mnt/store/jparanj1/endovis17/"
         for i in range(len(df)):
-            self.img_path_list.append(df['img_path'][i])
+            self.img_path_list.append(os.path.join(root_path,df['img_path'][i]))
             self.img_names.append(df['img_name'][i])
-            self.label_path_list.append(df['label_path'][i])
+            self.label_path_list.append(os.path.join(root_path,df['label_path'][i]))
             self.label_list.append(df['label_name'][i])
         
 
@@ -66,7 +67,7 @@ class Endovis_Dataset(Dataset):
     
     def __getitem__(self, index):
         img = torch.as_tensor(np.array(Image.open(self.img_path_list[index]).convert("RGB")))
-        if self.config['data']['volume_channel']==2:
+        if self.config['volume_channel']==2:
             img = img.permute(2,0,1)
 
         if self.no_text_mode:
@@ -91,6 +92,7 @@ class Endovis_Dataset(Dataset):
             try:
                 label = torch.Tensor(np.array(Image.open(self.label_path_list[index])))
             except:
+                1/0
                 label = torch.zeros(img.shape[1], img.shape[2])
 
             
@@ -103,7 +105,7 @@ class Endovis_Dataset(Dataset):
             label = (label>=0.5)+0
             label = label[0]
 
-            if self.test:
+            if self.is_test:
                 label_name = self.label_list[index]
                 if 'Left' in label_name:
                     side_mask = np.concatenate([label[:,:w//2],label[:,w//2:]*0], axis=1)
@@ -111,6 +113,8 @@ class Endovis_Dataset(Dataset):
                     side_mask = np.concatenate([label[:,:w//2]*0, label[:,w//2:]], axis=1)
                 else:
                     side_mask = label
+            else:
+                side_mask = label
 
 
         return img, side_mask, self.img_path_list[index], label_of_interest

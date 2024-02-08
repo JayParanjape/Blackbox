@@ -45,8 +45,8 @@ class RITE_Dataset(Dataset):
             labels_path = os.path.join(self.root_path, 'train/masks')
         else:
             if self.is_test:
-                imgs_path = os.path.join(self.root_path, 'validation/images')
-                labels_path = os.path.join(self.root_path, 'validation/masks')
+                imgs_path = os.path.join(self.root_path, 'test/images')
+                labels_path = os.path.join(self.root_path, 'test/masks')
             else:
                 imgs_path = os.path.join(self.root_path, 'validation/images')
                 labels_path = os.path.join(self.root_path, 'validation/masks')
@@ -78,6 +78,7 @@ class RITE_Dataset(Dataset):
                 label = label[:,:,0]
         except:
             label = torch.zeros(img.shape[1], img.shape[2])
+            1/0
         
         label = label.unsqueeze(0)
         label = (label>0)+0

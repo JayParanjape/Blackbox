@@ -63,8 +63,8 @@ def spsa_grad_estimate_bi(model, image, points, boxes, text, label, loss_fn, ck,
             #! Segmented Uniform [-1, 0.5] U [0.5, 1]
             p_side = (torch.rand(N_params).reshape(-1,1) + 1)/2
             samples = torch.cat([p_side,-p_side], dim=1)
-            perturb = torch.gather(samples, 1, torch.bernoulli(torch.ones_like(p_side)/2).type(torch.int64)).reshape(-1).cuda()
-            perturb = perturb.to(w.device)
+            perturb = torch.gather(samples, 1, torch.bernoulli(torch.ones_like(p_side)/2).type(torch.int64)).reshape(-1).to(w.device)
+            
             del samples; del p_side
 
             #* two-side Approximated Numerical Gradient
@@ -85,7 +85,10 @@ def spsa_grad_estimate_bi(model, image, points, boxes, text, label, loss_fn, ck,
 
             #* parameter update via estimated gradient
             ghat = (loss1 - loss2)/((2*ck)*perturb)
-            ghats.append(ghat.reshape(1, -1))
+            # print("debug: ghat: ", ghat, loss1, loss2)
+            if not torch.isnan(torch.mean(ghat)):
+                ghats.append(ghat.reshape(1, -1))
+        
         if sp_avg == 1: pass
         else: ghat = torch.cat(ghats, dim=0).mean(dim=0) 
         loss = ((loss1+loss2)/2)

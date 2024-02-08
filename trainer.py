@@ -104,6 +104,10 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
             data_idx = np.random.choice(len(tr_dataset))
             # image, point, box, text, label = tr_dataset[data_idx]
             image_j, label_j, _, text_j = tr_dataset[data_idx]
+            if not label_j.any():
+                # print(text_j)
+                # print("blank labels here\n")
+                continue
             image_j = image_j.unsqueeze(0).to(device)
             label_j = label_j.unsqueeze(0).to(device)
             image.append(image_j)
@@ -144,6 +148,7 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
                     boxes.append(box)
                     text.append(text_j)
             else:
+                print(text_j)
                 points.append(None)
                 boxes.append(None)
                 text.append(text_j)
@@ -216,6 +221,7 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
             if tr_loss < best_tr_loss:
                 best_tr_loss = tr_loss
                 torch.save(model.decoder.state_dict(), os.path.join(save_path,'best_tr.pth'))
+            print("best tr loss so far: ", best_tr_loss)
 
         if i%50 == 0:
             val_loss, val_dice = evaluate(val_dataset, model, train_config, loss_fxn)
@@ -239,6 +245,10 @@ def evaluate(val_dataset, model, train_config, loss_fxn):
             image, label, _, text = val_dataset[i]
             image = image.unsqueeze(0).to(model.device)
             label = label.unsqueeze(0).to(model.device)
+            if not label.any():
+                # print(text)
+                # print("blank labels here\n")
+                continue
             points = []
             boxes = []
             texts = []
@@ -282,7 +292,7 @@ def evaluate(val_dataset, model, train_config, loss_fxn):
             if train_config['use_only_point']:
                 points = torch.cat(points,dim=0).to(image.device)
 
-            output = model(image, points, boxes, texts)
+            output = model(image, points, boxes, texts, debug=True)
             output = torch.Tensor(output).to(label.device)
             loss = loss_fxn.forward(output, label)
             dice = dice_coef(label,(output>=0.5)+0)
