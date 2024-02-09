@@ -32,6 +32,17 @@ class Endovis_Dataset(Dataset):
         self.config = config
         self.apply_norm = apply_norm
         self.no_text_mode = no_text_mode
+        self.label_dict = {
+            'Left Prograsp Forceps':2,
+            'Maryland Bipolar Forceps': 1,
+            'Right Prograsp Forceps': 2,
+            'Left Large Needle Driver':3,
+            'Right Large Needle Driver':3,
+            'Left Grasping Retractor':5,
+            'Right Grasping Retractor':5,
+            'Vessel Sealer':4,
+            'Monopolar Curved Scissors':6
+        }
 
         self.populate_lists()
         if shuffle_list:
@@ -54,7 +65,7 @@ class Endovis_Dataset(Dataset):
             else:
                 csv_file = os.path.join(self.root_path, 'val.csv')
         df = pd.read_csv(csv_file)
-        root_path = "/mnt/store/jparanj1/endovis17/"
+        root_path = "/media/ubuntu/New Volume/jay/endovis17/"
         for i in range(len(df)):
             self.img_path_list.append(os.path.join(root_path,df['img_path'][i]))
             self.img_names.append(df['img_name'][i])
@@ -97,6 +108,8 @@ class Endovis_Dataset(Dataset):
 
             
             label = label.unsqueeze(0)
+            if self.is_test:
+                label = (label==self.label_dict[self.label_list[index]]) + 0
             label = (label>0)+0
             label_of_interest = self.label_list[index]
             img, label = self.data_transform(img, label, is_train=self.is_train, apply_norm=self.apply_norm)
@@ -116,7 +129,7 @@ class Endovis_Dataset(Dataset):
                     side_mask = label
             else:
                 side_mask = label
-
+            side_mask = torch.Tensor(side_mask).to(img.device)
 
         return img, side_mask, self.img_path_list[index], label_of_interest
 

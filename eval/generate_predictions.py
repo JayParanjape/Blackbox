@@ -112,8 +112,11 @@ def main_predict(config, pretrained_path, save_path, device):
             texts.append(text)
 
         if train_config['use_only_point']:
-            points = torch.cat(points,dim=0)
-            print(point)
+            if points[0]!=None:
+                points = torch.cat(points,dim=0)
+                print(point)
+            else:
+                continue
         else:
             print(texts)
 
