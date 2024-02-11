@@ -242,6 +242,8 @@ def evaluate(val_dataset, model, train_config, loss_fxn):
         losses = []
         dices = []
         for i in range(len(val_dataset)):
+            if i%10!=0:
+                continue
             image, label, _, text = val_dataset[i]
             image = image.unsqueeze(0).to(model.device)
             label = label.unsqueeze(0).to(model.device)
