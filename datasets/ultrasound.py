@@ -15,9 +15,9 @@ from torch.nn.functional import pad
 from skimage.transform import resize
 import time
 import json
-from data_transforms.chestxdet_transform import ChestXDet_Transform
+from data_transforms.ultrasound_transform imprt Ultrasound_Transform
 
-class ChestXDet_Dataset(Dataset):
+class Ultrasound_Dataset(Dataset):
     def __init__(self, config, start=0, end=200, is_train=False, shuffle_list = True, apply_norm=True, no_text_mode=False, is_test=False):
         super().__init__()
         self.root_path = config['root_path']
@@ -32,21 +32,16 @@ class ChestXDet_Dataset(Dataset):
         self.config = config
         self.apply_norm = apply_norm
         self.no_text_mode = no_text_mode
-        self.label_dict = {
-            'Effusion': 1, 
-            'Nodule': 2, 
-            'Cardiomegaly': 3, 
-            'Fibrosis': 4, 
-            'Consolidation': 5, 
-            'Emphysema': 6, 
-            'Mass': 7, 
-            'Fracture': 8, 
-            'Calcification': 9, 
-            'Pleural Thickening': 10, 
-            'Pneumothorax': 11, 
-            'Atelectasis': 12, 
-            'Diffuse Nodule': 13
-            }
+        label_dict = {
+            'Liver': [100,0,100],
+            'Kidney': [255,255,0],
+            'Pancreas': [0,0,255],
+            'Vessels': [255,0,0],
+            'Adrenals': [0,255,255],
+            'Gall Bladder': [0,255,0],
+            'Bones': [255,255,255],
+            'Spleen': [255,0,255]
+        }
 
         self.populate_lists()
         if shuffle_list:
@@ -58,7 +53,7 @@ class ChestXDet_Dataset(Dataset):
             self.label_list = [self.label_list[pi] for pi in p]
 
         #define data transform
-        self.data_transform = ChestXDet_Transform(config=config)
+        self.data_transform = Ultrasound_Transform(config=config)
     
     def populate_lists(self):
         if self.is_train:
@@ -115,11 +110,8 @@ class ChestXDet_Dataset(Dataset):
             1/0
             label = torch.zeros(img.shape[1], img.shape[2])
 
-        if len(label.shape)==3:
-            label = label[:,:,0]
+        label = np.all(np.where(label==self.label_dict[self.label_list[index]],1,0),axis=2)
         
-        label = (label==self.label_dict[self.label_list[index]])
-            
         label = torch.Tensor(label+0).unsqueeze(0)
         img, label = self.data_transform(img, label, is_train=self.is_train, apply_norm=self.apply_norm)
 
