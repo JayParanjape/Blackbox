@@ -92,4 +92,4 @@ class KVASIRSEG_Dataset(Dataset):
         label = (label>=0.5)+0
         label = label[0]
 
-        return img, label, self.img_path_list[index], label_of_interest
+        return img, label, self.img_names[index], label_of_interest

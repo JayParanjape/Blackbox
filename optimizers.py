@@ -51,11 +51,15 @@ def get_output(model, image, points, boxes, text):
             return ret
                 
 
-def spsa_grad_estimate_bi(model, image, points, boxes, text, label, loss_fn, ck, sp_avg):
+def spsa_grad_estimate_bi(model, image, points, boxes, text, label, loss_fn, ck, sp_avg, baseline_expts=False):
         #* repeat k times and average them for stabilizing
         ghats = []
-        w = torch.nn.utils.parameters_to_vector(model.decoder.parameters())
-        N_params = w.shape[0]
+        if baseline_expts:
+            w = model.vp
+            N_params = w.shape
+        else:
+            w = torch.nn.utils.parameters_to_vector(model.decoder.parameters())
+            N_params = w.shape[0]
         for spk in range(sp_avg):
             #! Bernoulli {-1, 1}
             # perturb = torch.bernoulli(torch.empty(self.N_params).uniform_(0,1)).cuda()
@@ -68,12 +72,20 @@ def spsa_grad_estimate_bi(model, image, points, boxes, text, label, loss_fn, ck,
             del samples; del p_side
 
             #* two-side Approximated Numerical Gradient
-            w_r = w + ck*perturb
-            w_l = w - ck*perturb
-            torch.nn.utils.vector_to_parameters(w_r, model.decoder.parameters())
+            if baseline_expts:
+                w_r = w + (ck*perturb).reshape(w.shape)
+                w_l = w - (ck*perturb).reshape(w.shape)
+                model.vp = w_r
+            else:
+                w_r = w + ck*perturb
+                w_l = w - ck*perturb
+                torch.nn.utils.vector_to_parameters(w_r, model.decoder.parameters())
             # output1 = model(image, points, boxes, text)
             output1 = get_output(model, image, points, boxes, text)
-            torch.nn.utils.vector_to_parameters(w_l, model.decoder.parameters())
+            if baseline_expts:
+                model.vp = w_l
+            else:
+                torch.nn.utils.vector_to_parameters(w_l, model.decoder.parameters())
             # output2 = model(image, points, boxes, text)
             output2 = get_output(model, image, points, boxes, text)
 

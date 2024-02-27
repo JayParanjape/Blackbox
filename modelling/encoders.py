@@ -17,6 +17,8 @@ def get_encoder(encoder_config, device):
         return Dino_Resnet50_Encoder(device)
     elif encoder_config['name'] == 'VIT-MAE-BASE':
         return ViT_MAE_Encoder(device)
+    elif encoder_config['name'] == 'VIT':
+        return ViT(device)
     return None
 
 
@@ -33,6 +35,17 @@ class ViT_MAE_Encoder(nn.Module):
     def __init__(self, device):
         super().__init__()
         self.backbone = ViTForImageClassification.from_pretrained("facebook/vit-mae-base").to(device)
+        self.embed_dim = 768
+    
+    def encode_image(self, img, perform_pool=True):
+        out = self.backbone(img, output_hidden_states=True, interpolate_pos_encoding=True)
+        z = out.hidden_states[-1][:,0,:] #NX768 by using the CLS from last hidden state
+        return z
+
+class ViT(nn.Module):
+    def __init__(self, device):
+        super().__init__()
+        self.backbone = ViTForImageClassification.from_pretrained("google/vit-base-patch16-224").to(device)
         self.embed_dim = 768
     
     def encode_image(self, img, perform_pool=True):

@@ -1,4 +1,5 @@
 from modelling.model import FinalModel
+from modelling.baseline_vpt import Baseline_VPT
 from optimizers import *
 import os
 import sys
@@ -26,7 +27,7 @@ class Loss_fxn():
                 loss += (tmp_wt[i]*l(pred, label.float()))
         return loss
 
-def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, blackbox_config, optim_config, train_config, device, pretrained_path, save_path):
+def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, blackbox_config, optim_config, train_config, device, pretrained_path, save_path, baseline_expts=False):
     #set up logger
     logging.basicConfig(filename=os.path.join(save_path,"training_progress.log"),
                     format='%(message)s',
@@ -41,20 +42,26 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
     # print("debug: len tr dataset", len(tr_dataset))
 
     num_training_iters = train_config['num_train']
-    model = FinalModel(encoder_config=encoder_config, decoder_config=decoder_config, blackbox_config=blackbox_config, prompt_config=prompt_encoder_config, device=device)
-    model.data_pixel_mean = tr_dataset.data_transform.pixel_mean
-    model.data_pixel_std = tr_dataset.data_transform.pixel_std
-    model = model.to(device)
-    if pretrained_path:
-        model.decoder.load_state_dict(torch.load(pretrained_path,map_location=device), strict=True)
-    print("debug: model loaded")
+    if baseline_expts:
+        model = Baseline_VPT(encoder_config=encoder_config, decoder_config=decoder_config, blackbox_config=blackbox_config, prompt_config=prompt_encoder_config, device=device)
+        model.data_pixel_mean = tr_dataset.data_transform.pixel_mean
+        model.data_pixel_std = tr_dataset.data_transform.pixel_std
+        num_params = torch.sum(torch.ones_like(model.vp)).item()
+    else:
+        model = FinalModel(encoder_config=encoder_config, decoder_config=decoder_config, blackbox_config=blackbox_config, prompt_config=prompt_encoder_config, device=device)
+        model.data_pixel_mean = tr_dataset.data_transform.pixel_mean
+        model.data_pixel_std = tr_dataset.data_transform.pixel_std
+        model = model.to(device)
+        if pretrained_path:
+            model.decoder.load_state_dict(torch.load(pretrained_path,map_location=device), strict=True)
+        print("debug: model loaded")
 
-    
+        
 
-    logger.info("model loaded")
-    print(model.decoder)
-    num_params = sum(p.numel() for p in model.decoder.parameters())
-    print("Number of parameters in the decoder: ", num_params)
+        logger.info("model loaded")
+        print(model.decoder)
+        num_params = sum(p.numel() for p in model.decoder.parameters())
+        print("Number of parameters in the decoder: ", num_params)
 
     #define loss function
     losses_list = []
@@ -159,7 +166,11 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
         if train_config['use_only_point']:
             points = torch.cat(points,dim=0)
         # print("debug: points shape ",points.shape)
-        w = torch.nn.utils.parameters_to_vector(model.decoder.parameters())
+        if baseline_expts:
+            w = model.vp
+        else:
+            w = torch.nn.utils.parameters_to_vector(model.decoder.parameters())
+
         if i==1 and train_config['Zero_Init']:
             w = w*0
 
@@ -174,7 +185,7 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
 
                 momentum = 0 if cooldown>0 else optim_config['momentum']
 
-                ghat, loss, dice = spsa_grad_estimate_bi(model, image, points, boxes, text, label, loss_fxn, ck, optim_config['sp_avg'])
+                ghat, loss, dice = spsa_grad_estimate_bi(model, image, points, boxes, text, label, loss_fxn, ck, optim_config['sp_avg'], baseline_expts=baseline_expts)
                 if torch.norm(ghat)==0:
                     optim_config['c'] *= 10
                 logger.info("the norm of pseudo gradient is: %s", str(torch.norm(ghat)))
@@ -185,8 +196,15 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
                 accum_ghat = ghat + momentum*m
                 logger.info("the norm of pseudo accum gradient is: %s", str(torch.norm(accum_ghat)))
                 print("the norm of pseudo accum gradient is: %s", str(torch.norm(accum_ghat)))
-                w = w - lr*accum_ghat
-                torch.nn.utils.vector_to_parameters(w, model.decoder.parameters())
+                if baseline_expts:
+                    w = w - (lr*accum_ghat).reshape(w.shape)
+                else:
+                    w = w - lr*accum_ghat
+
+                if baseline_expts:
+                    model.vp = w
+                else:
+                    torch.nn.utils.vector_to_parameters(w, model.decoder.parameters())
 
                 if cooldown>0:
                     cooldown -= 1
@@ -220,7 +238,10 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
 
             if tr_loss < best_tr_loss:
                 best_tr_loss = tr_loss
-                torch.save(model.decoder.state_dict(), os.path.join(save_path,'best_tr.pth'))
+                if baseline_expts:
+                    torch.save(model.vp, os.path.join(save_path, 'best_tr.pth'))
+                else:
+                    torch.save(model.decoder.state_dict(), os.path.join(save_path,'best_tr.pth'))
             print("best tr loss so far: ", best_tr_loss)
 
         if i%50 == 0:
@@ -229,7 +250,10 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
             print("Average dice on the val set: ", val_dice)
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
-                torch.save(model.decoder.state_dict(), os.path.join(save_path,'best_val.pth'))
+                if baseline_expts:
+                    torch.save(model.vp, os.path.join(save_path, 'best_val.pth'))
+                else:
+                    torch.save(model.decoder.state_dict(), os.path.join(save_path,'best_val.pth'))
 
         if i%200 == 0:
             torch.save(model.decoder.state_dict(), os.path.join(save_path,'current.pth'))

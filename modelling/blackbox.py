@@ -13,7 +13,11 @@ class BBox_SAM(nn.Module):
         super().__init__()
         self.config = config
         self.device = device
-        self.sam_model = sam_model_registry[config['model_type']](checkpoint=config['sam_checkpoint'])
+        if 'medsam' in config['sam_checkpoint']:
+            self.sam_model = sam_model_registry[config['model_type']](checkpoint='/home/ubuntu/Desktop/Domain_Adaptation_Project/repos/segment-anything/checkpoints/sam_vit_b_01ec64.pth')
+            self.sam_model.load_state_dict(torch.load(config['sam_checkpoint']), strict=True)
+        else:
+            self.sam_model = sam_model_registry[config['model_type']](checkpoint=config['sam_checkpoint'])
         self.sam_model = self.sam_model.to(device=device)
         self.clip_model,_ = clip.load("ViT-B/32", device=device)
         self.automatic_mask_generator = SamAutomaticMaskGenerator(self.sam_model)
@@ -114,3 +118,5 @@ class BBox_SAM(nn.Module):
                     masks = nn.functional.sigmoid(torch.Tensor(masks))
 
             return masks
+
+# class SEEM

@@ -131,7 +131,7 @@ class Endovis_Dataset(Dataset):
                 side_mask = label
             side_mask = torch.Tensor(side_mask).to(img.device)
 
-        return img, side_mask, self.img_path_list[index], label_of_interest
+        return img, side_mask, self.img_names[index], label_of_interest
 
     def __len__(self):
         return len(self.img_path_list)

@@ -3,6 +3,7 @@ import PIL.Image as Image
 import sys
 sys.path.append("..")
 from modelling.model import FinalModel
+from modelling.baseline_vpt import Baseline_VPT
 import argparse
 import yaml
 from data_utils import get_data
@@ -35,12 +36,13 @@ def parse_args():
     parser.add_argument('--device', default='cuda:0', help='device to train on')
 
     parser.add_argument('--labels_of_interest', default='Left Prograsp Forceps,Maryland Bipolar Forceps,Right Prograsp Forceps,Left Large Needle Driver,Right Large Needle Driver', help='labels of interest')
+    parser.add_argument('--baseline_vp', default=False, help='whether to run baseline visual prompting')
 
     args = parser.parse_args()
 
     return args
 
-def main_predict(config, pretrained_path, save_path, device):
+def main_predict(config, pretrained_path, save_path, device, baseline_vp=False):
 
     #make folder to save visualizations
     os.makedirs(os.path.join(save_path,"rescaled_preds"),exist_ok=True)
@@ -57,18 +59,24 @@ def main_predict(config, pretrained_path, save_path, device):
     dataset_dict, dataloader_dict, _ = get_data(data_config)
     transform = T.ToPILImage()
 
-    model = FinalModel(encoder_config=encoder_config, decoder_config=decoder_config, blackbox_config=blackbox_config, prompt_config=prompt_encoder_config, device=device)
+    if baseline_vp:
+        model = Baseline_VPT(encoder_config=encoder_config, decoder_config=decoder_config, blackbox_config=blackbox_config, prompt_config=prompt_encoder_config, device=device)
+    else:
+        model = FinalModel(encoder_config=encoder_config, decoder_config=decoder_config, blackbox_config=blackbox_config, prompt_config=prompt_encoder_config, device=device)
     model.data_pixel_mean = dataset_dict['test'].data_transform.pixel_mean
     model.data_pixel_std = dataset_dict['test'].data_transform.pixel_std
 
     model = model.to(device)
     if pretrained_path:
-        model.decoder.load_state_dict(torch.load(pretrained_path,map_location=device), strict=True)
+        if baseline_vp:
+            model.vp = torch.load(pretrained_path, map_location=device)
+        else:
+            model.decoder.load_state_dict(torch.load(pretrained_path,map_location=device), strict=True)
     print("debug: model loaded")
 
     dices = []
     for i in range(len(dataset_dict['test'])):
-        image, label, _, text = dataset_dict['test'][i]
+        image, label, im_name, text = dataset_dict['test'][i]
         image = image.unsqueeze(0).to(model.device)
         label = label.unsqueeze(0).to(model.device)
         points = []
@@ -136,8 +144,8 @@ def main_predict(config, pretrained_path, save_path, device):
         pred = Image.fromarray((255*output.cpu()).numpy().astype(np.uint8).transpose(1, 2, 0)[:,:,0])
         mask = Image.fromarray((255*label.cpu()).numpy().astype(np.uint8).transpose(1, 2, 0)[:,:,0])
 
-        pred.save(os.path.join(save_path, 'rescaled_preds', str(i)+'.png'), 'PNG')
-        mask.save(os.path.join(save_path, 'rescaled_gt', str(i)+'.png'), 'PNG')
+        pred.save(os.path.join(save_path, 'rescaled_preds', str(i)+ '_' + im_name + '.png'), 'PNG')
+        mask.save(os.path.join(save_path, 'rescaled_gt', str(i) + '_' + im_name +'.png'), 'PNG')
         # break
 
     print("Average dice scores: ", torch.mean(torch.Tensor(dices)))
@@ -149,4 +157,4 @@ if __name__ == '__main__':
         config = yaml.load(f, Loader=yaml.FullLoader)
     
     # # for training the model
-    main_predict(config, args.pretrained_path, args.save_path, device=args.device)
+    main_predict(config, args.pretrained_path, args.save_path, device=args.device, baseline_vp = args.baseline_vp)

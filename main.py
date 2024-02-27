@@ -17,13 +17,15 @@ def parse_args():
 
     parser.add_argument('--device', default='cuda:0', help='device to train on')
 
+    parser.add_argument('--baseline_vp', default=False, help='run baseline prompts experiment')
+
     args = parser.parse_args()
 
     return args
 
 
 
-def main_train(config, pretrained_path, save_path, device):
+def main_train(config, pretrained_path, save_path, device, baseline_vp):
     encoder_config = config['encoder_config']
     decoder_config = config['decoder_config']
     prompt_encoder_config = config['prompt_encoder_config']
@@ -46,7 +48,8 @@ def main_train(config, pretrained_path, save_path, device):
         train_config=train_config,
         device=device,
         pretrained_path=pretrained_path,
-        save_path=save_path
+        save_path=save_path,
+        baseline_expts=baseline_vp
     )
 
 if __name__ == '__main__':
@@ -55,4 +58,4 @@ if __name__ == '__main__':
         config = yaml.load(f, Loader=yaml.FullLoader)
     
     # # for training the model
-    main_train(config, args.pretrained_path, args.save_path, device=args.device)
+    main_train(config, args.pretrained_path, args.save_path, device=args.device, baseline_vp = args.baseline_vp)
