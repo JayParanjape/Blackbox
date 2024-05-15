@@ -80,6 +80,8 @@ class FinalModel(nn.Module):
         diff_img = (prompt_img*self.data_pixel_std.unsqueeze(0).to(sam_img.device) + self.data_pixel_mean.unsqueeze(0).to(sam_img.device))
         diff_img = torch.clip(diff_img, 0, 255)
         
+        img_ = (img*self.data_pixel_std.unsqueeze(0).to(img.device) + self.data_pixel_mean.unsqueeze(0).to(img.device))
+        img_ = torch.clip(img_, 0, 255)
 
         diff_img = diff_img[0].permute(1,2,0).cpu().numpy().astype(np.uint8)
 
@@ -91,6 +93,7 @@ class FinalModel(nn.Module):
         if use_sam_actual:
             if len(sam_img.shape)==4:
                 sam_img = sam_img[0]
+                img_ = img_[0]
                 try:
                     point = point[0]
                 except:
@@ -99,6 +102,9 @@ class FinalModel(nn.Module):
             if sam_img.shape[0]==3:
                 sam_img = sam_img.permute(1,2,0).cpu().numpy()
             sam_img = sam_img.astype(np.uint8)
+            if img_.shape[0]==3:
+                img_ = img_.permute(1,2,0).cpu().numpy()
+            img_ = img_.astype(np.uint8)
             
         
         if self.use_sam_auto_mode:
@@ -111,6 +117,6 @@ class FinalModel(nn.Module):
             mask = mask[:,0,:,:]
 
         if return_sam_img:
-            return mask, sam_img, diff_img
+            return mask, sam_img, diff_img, img_
 
         return mask

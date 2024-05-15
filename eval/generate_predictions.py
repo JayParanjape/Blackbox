@@ -47,6 +47,10 @@ def main_predict(config, pretrained_path, save_path, device, baseline_vp=False):
     #make folder to save visualizations
     os.makedirs(os.path.join(save_path,"rescaled_preds"),exist_ok=True)
     os.makedirs(os.path.join(save_path,"rescaled_gt"),exist_ok=True)
+    os.makedirs(os.path.join(save_path,"rescaled_img"),exist_ok=True)
+    os.makedirs(os.path.join(save_path,"rescaled_sam_img"),exist_ok=True)
+    os.makedirs(os.path.join(save_path,"rescaled_diff"),exist_ok=True)
+
     
     encoder_config = config['encoder_config']
     decoder_config = config['decoder_config']
@@ -129,7 +133,7 @@ def main_predict(config, pretrained_path, save_path, device, baseline_vp=False):
             print(texts)
 
         with torch.no_grad():
-            output = model(image, points, boxes, texts)
+            output, sam_img, diff_img, img = model(image, points, boxes, texts, return_sam_img=True)
             output = torch.Tensor(output).to(label.device)
         # print(torch.unique(output))
         output = (output>=0.5)+0
@@ -143,9 +147,17 @@ def main_predict(config, pretrained_path, save_path, device, baseline_vp=False):
         # print("Output nuique: ", torch.unique(output))
         pred = Image.fromarray((255*output.cpu()).numpy().astype(np.uint8).transpose(1, 2, 0)[:,:,0])
         mask = Image.fromarray((255*label.cpu()).numpy().astype(np.uint8).transpose(1, 2, 0)[:,:,0])
+        sam_img = Image.fromarray(sam_img)
+        diff_img = Image.fromarray(diff_img)
+        img = Image.fromarray(img)
+
 
         pred.save(os.path.join(save_path, 'rescaled_preds', str(i)+ '_' + im_name + '.png'), 'PNG')
         mask.save(os.path.join(save_path, 'rescaled_gt', str(i) + '_' + im_name +'.png'), 'PNG')
+        diff_img.save(os.path.join(save_path, 'rescaled_diff', str(i) + '_' + im_name +'.png'), 'PNG')
+        img.save(os.path.join(save_path, 'rescaled_img', str(i) + '_' + im_name +'.png'), 'PNG')
+        sam_img.save(os.path.join(save_path, 'rescaled_sam_img', str(i) + '_' + im_name +'.png'), 'PNG')
+
         # break
 
     print("Average dice scores: ", torch.mean(torch.Tensor(dices)))
