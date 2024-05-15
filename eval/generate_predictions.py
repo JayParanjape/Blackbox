@@ -16,10 +16,8 @@ import torchvision.transforms as T
 
 label_names = ['Glands']
 label_dict = {}
-# visualize_dict = {}
 for i,ln in enumerate(label_names):
         label_dict[ln] = i
-        # visualize_dict[ln] = visualize_li[i]
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -135,16 +133,12 @@ def main_predict(config, pretrained_path, save_path, device, baseline_vp=False):
         with torch.no_grad():
             output, sam_img, diff_img, img = model(image, points, boxes, texts, return_sam_img=True)
             output = torch.Tensor(output).to(label.device)
-        # print(torch.unique(output))
         output = (output>=0.5)+0
         dice = dice_coef(label, output)
         dices.append(dice)
         print(dice)
 
         #save image at path
-        # print("Output shape: ", output.shape)
-        # print("Label shape: ", label.shape)
-        # print("Output nuique: ", torch.unique(output))
         pred = Image.fromarray((255*output.cpu()).numpy().astype(np.uint8).transpose(1, 2, 0)[:,:,0])
         mask = Image.fromarray((255*label.cpu()).numpy().astype(np.uint8).transpose(1, 2, 0)[:,:,0])
         sam_img = Image.fromarray(sam_img)
@@ -168,5 +162,4 @@ if __name__ == '__main__':
     with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
     
-    # # for training the model
     main_predict(config, args.pretrained_path, args.save_path, device=args.device, baseline_vp = args.baseline_vp)

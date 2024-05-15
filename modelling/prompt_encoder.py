@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import clip
 
-from typing import Any, Optional, Tuple, Type
+from typing import Any, Optional, Tuple
 
 #adapted in part from SAM
 class PromptEncoder(nn.Module):
@@ -16,9 +16,6 @@ class PromptEncoder(nn.Module):
         #for point based and bounding box based prompts
         self.pe_layer = PositionEmbeddingRandom(self.embedding_size)
         self.num_point_embeddings: int = 4  # pos/neg point + 2 box corners
-        # point_embeddings = [nn.Embedding(1, self.embedding_size) for i in range(self.num_point_embeddings)]
-        # self.point_embeddings = nn.ModuleList(point_embeddings)
-        # self.not_a_point_embed = nn.Embedding(1, self.embedding_size)
 
         #for text based prompt
         self.clip_model, _  = clip.load("ViT-B/32", device=device)
@@ -32,15 +29,12 @@ class PromptEncoder(nn.Module):
         points = points + 0.5 #move to the pixel center from the top left point
         points_embedding = self.pe_layer.forward_with_coords(points, self.input_img_size)
         #only consider positive points for now
-        # points_embedding += self.point_embeddings[1].weight
         return points_embedding  #N1 X 1 X embedding_size
 
     def encode_bb(self, boxes):
         boxes = boxes + 0.5  # Shift to center of pixel
         coords = boxes.reshape(-1, 2, 2)
         corner_embedding = self.pe_layer.forward_with_coords(coords, self.input_img_size)
-        # corner_embedding[:, 0, :] += self.point_embeddings[2].weight
-        # corner_embedding[:, 1, :] += self.point_embeddings[3].weight
         return corner_embedding #N2 X 2 X embedding_size
 
     def encode_mask(self, masks):
@@ -52,7 +46,6 @@ class PromptEncoder(nn.Module):
         with torch.no_grad():
             text_embedding = self.clip_model.encode_text(text_inputs)
             text_embedding = text_embedding.unsqueeze(1)
-            # text_embedding = self.text_affine_layer(text_embedding)
             return text_embedding
 
     def forward(self, points=None, bboxes=None, masks=None, text=None):
@@ -102,7 +95,6 @@ class PromptEncoder(nn.Module):
                 sparse_prompt_embeddings.append(text_prompt)
         
         sparse_prompt_embeddings = torch.cat(sparse_prompt_embeddings, dim=0)
-        # print("debug: sparse prompt embeddings shape: ", sparse_prompt_embeddings.shape)
         if not masks:
             dense_prompt_embeddings = None
 

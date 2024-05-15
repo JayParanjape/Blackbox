@@ -43,9 +43,6 @@ class ISIC2018_Dataset(Dataset):
         if self.is_train:
             imgs_path = os.path.join(self.root_path, 'ISIC2018_Task1-2_Training_Input')
             labels_path = os.path.join(self.root_path, 'ISIC2018_Task1_Training_GroundTruth')
-        # if self.is_train:
-        #     imgs_path = os.path.join(self.root_path, 'ISIC2018_Task1-2_TrainVal_Input')
-        #     labels_path = os.path.join(self.root_path, 'ISIC2018_Task1_TrainVal_GroundTruth')
         else:
             if self.is_test:
                 imgs_path = os.path.join(self.root_path, 'ISIC2018_Task1-2_Test_Input')

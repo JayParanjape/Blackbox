@@ -19,10 +19,8 @@ class FinalModel(nn.Module):
         self.use_sam_actual = blackbox_config['use_sam_actual']
         
         #set some decoder config params based on encoder and prompt encoder
-        # if encoder_config['name']=='CLIP':
         decoder_config['prompt_input_dim'] = prompt_config['embedding_size']
         decoder_config['prompt_output_dim'] = decoder_config['prompt_output_dim']
-        #total channels = 1078 = 21 X 49
         decoder_config['decoder_input_dim'] = decoder_config['decoder_input_dim']
         decoder_config['auto_mode'] = blackbox_config['auto_mode']
         decoder_config['img_size'] = prompt_config['input_img_size']
@@ -34,7 +32,6 @@ class FinalModel(nn.Module):
                 decoder_config['encoder_dim'] = 2048
                 
 
-        #TODO - figure out how to add positional embeddings. One way is through learnable embeddings        
         self.decoder = get_decoder(decoder_config=decoder_config, device=device)
         self.blackbox = get_blackbox(blackbox_config=blackbox_config, device=device)
         
@@ -49,9 +46,7 @@ class FinalModel(nn.Module):
     def forward(self, img, point=None, box=None, text=None, return_sam_img = False, debug=False):
         prompt_embeddings = []
         use_sam_actual = self.use_sam_actual
-        # if self.use_sam_auto_mode:
-        #     prompt_embeddings=None
-        # else:
+        
         if text!=None and text[0]!= None:
             for i in range(len(text)):
                 prompt_embeddings_i,_ = self.prompt_encoder(points = None, bboxes=None, text=text[i])
@@ -61,8 +56,6 @@ class FinalModel(nn.Module):
             prompt_embeddings,_ = self.prompt_encoder(points = point, bboxes = box, text = text)
 
         img_embeddings = self.encoder.encode_image(img, perform_pool= not self.use_sam_auto_mode)
-        # print("debug: img embeddings shape", img_embeddings.shape)
-        # print("debug: prompt embeddings shape", prompt_embeddings.shape)
         
         if self.decoder.name=='concat':
             prompt_img = self.decoder(img_embeddings, prompt_embeddings)

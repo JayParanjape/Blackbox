@@ -28,7 +28,6 @@ class Clip_Encoder(nn.Module):
         self.clip_model, _  = clip.load("ViT-B/32", device=device)
 
     def encode_image(self, img, perform_pool=False):
-        # self.clip_model.image_resolution = img.shape[-1] if img.shape[-1]!=3 else img.shape[1]
         return self.clip_model.encode_image(img)
 
 class ViT_MAE_Encoder(nn.Module):

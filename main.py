@@ -38,7 +38,6 @@ def main_train(config, pretrained_path, save_path, device, baseline_vp):
 
     #train
     train(
-        # dataloader_dict=dataloader_dict,
         dataset_dict=dataset_dict,
         encoder_config=encoder_config,
         prompt_encoder_config=prompt_encoder_config,

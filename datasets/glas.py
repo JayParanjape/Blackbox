@@ -53,7 +53,6 @@ class GLAS_Dataset(Dataset):
 
 
         for img in os.listdir(imgs_path):
-            # print(img)
             if (('jpg' not in img) and ('jpeg not in img') and ('png' not in img) and ('bmp' not in img)):
                 continue
             if 'anno' in img:

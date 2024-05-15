@@ -1,5 +1,6 @@
 *.pth
 saved_models_and_configs
+paper_material
 *.log
 *.png
 *.pyc

@@ -1,20 +1,11 @@
 import random
-import argparse
 import os
-import sys
 import numpy as np
 import pandas as pd
 import torch
-from matplotlib import pyplot as plt
 from PIL import Image
-from torch.utils.data import Dataset, TensorDataset
-from torchvision import datasets, models
-from torchvision import transforms
+from torch.utils.data import Dataset
 from torchvision.transforms import functional as F
-from torch.nn.functional import pad
-from skimage.transform import resize
-import time
-import json
 from data_transforms.chestxdet_transform import ChestXDet_Transform
 
 class ChestXDet_Dataset(Dataset):
@@ -90,25 +81,6 @@ class ChestXDet_Dataset(Dataset):
         if self.config['volume_channel']==2:
             img = img.permute(2,0,1)
 
-        # if self.no_text_mode:
-        #     label = torch.zeros((self.num_classes,img.shape[1],img.shape[2]))
-        #     for i,label_name in enumerate(self.label_names):
-        #         try:
-        #             lbl_path = os.path.join(self.label_path_list[index],label_name.replace(' ','_')+'_labels',self.img_names[index])
-        #             # print("lbl path: ", lbl_path)
-        #             label_part = torch.Tensor(np.array(Image.open(lbl_path)))
-        #         except:
-        #             label_part = torch.zeros(img.shape[1], img.shape[2])
-        #         label[i,:,:] = label_part
-        #     label = (label>0)+0
-            
-        #     img, label = self.data_transform(img, label, is_train=self.is_train, apply_norm=self.apply_norm)
-        #     label = (label>=0.5)+0
-        #     label_of_interest = ''
-        #     # print("img shape: ",img.shape)
-        #     # print("label shape: ", label.shape)
-            
-        # else:
         try:
             label = torch.Tensor(np.array(Image.open(self.label_path_list[index])))
         except:

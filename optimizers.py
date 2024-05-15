@@ -1,28 +1,5 @@
 import torch
 from utils import *
-# import pyswarms as ps
-
-def global_swarm(model, optimizer, image, points, boxes, text, label, loss_fn, n_particles,options, num_iters=1000):
-    w = torch.nn.utils.parameters_to_vector(model.decoder.parameters())
-    N_params = w.shape[0]
-
-    def forward_prop(params):
-        torch.nn.utils.vector_to_parameters(torch.Tensor(params).to(model.device), model.decoder.parameters())
-        output_probs = model(image, points, boxes, text)
-        # print(output_probs.device)
-        # print(label.device)
-        loss = loss_fn.forward(torch.Tensor(output_probs).to(label.device), label)
-        return loss.cpu().numpy()
-
-    def f(x):
-        n_particles = x.shape[0]
-        j = [forward_prop(x[i]) for i in range(n_particles)]
-        return j
-
-    cost, pos = optimizer.optimize(f, iters=num_iters)
-    torch.nn.utils.vector_to_parameters(torch.Tensor(pos).to(model.device), model.decoder.parameters())
-
-    return cost,pos
 
 def get_output(model, image, points, boxes, text):
     if not model.use_sam_actual:
@@ -38,8 +15,6 @@ def get_output(model, image, points, boxes, text):
                     sam_points = points[i].unsqueeze(0) if points!=None else None
                 else:
                     sam_points = None
-                # print("debug: sam_img shape: ",sam_img.shape)
-                # print("debug: sam_points shape: ",sam_points.shape)
                 if text!= None:
                     sam_text = [text[i]]
                 else:
@@ -47,10 +22,9 @@ def get_output(model, image, points, boxes, text):
                 sam_out = model(sam_img, sam_points, boxes, sam_text)
                 ret.append(sam_out)
             ret = torch.cat(ret,dim=0).to(model.device)
-            # print("debug: ret shape: ", ret.shape)
             return ret
                 
-
+#adapted from https://github.com/changdaeoh/BlackVIP
 def spsa_grad_estimate_bi(model, image, points, boxes, text, label, loss_fn, ck, sp_avg, baseline_expts=False):
         #* repeat k times and average them for stabilizing
         ghats = []
@@ -80,24 +54,19 @@ def spsa_grad_estimate_bi(model, image, points, boxes, text, label, loss_fn, ck,
                 w_r = w + ck*perturb
                 w_l = w - ck*perturb
                 torch.nn.utils.vector_to_parameters(w_r, model.decoder.parameters())
-            # output1 = model(image, points, boxes, text)
             output1 = get_output(model, image, points, boxes, text)
             if baseline_expts:
                 model.vp = w_l
             else:
                 torch.nn.utils.vector_to_parameters(w_l, model.decoder.parameters())
-            # output2 = model(image, points, boxes, text)
             output2 = get_output(model, image, points, boxes, text)
 
             output1 = torch.Tensor(output1).to(label.device)
             output2 = torch.Tensor(output2).to(label.device)
-        #     print(f"debug: output shape: {output1.shape} label shape: {label.shape}")
             loss1 = loss_fn.forward(output1, label)
             loss2 = loss_fn.forward(output2, label)
 
-            #* parameter update via estimated gradient
             ghat = (loss1 - loss2)/((2*ck)*perturb)
-            # print("debug: ghat: ", ghat, loss1, loss2)
             if not torch.isnan(torch.mean(ghat)):
                 ghats.append(ghat.reshape(1, -1))
         

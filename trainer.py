@@ -2,12 +2,10 @@ from modelling.model import FinalModel
 from modelling.baseline_vpt import Baseline_VPT
 from optimizers import *
 import os
-import sys
 import numpy as np
 import torch
 import random
 import logging
-# import pyswarms as ps
 
 
 class Loss_fxn():
@@ -18,7 +16,8 @@ class Loss_fxn():
             self.losses_list = losses_list
 
     def forward(self, pred, label):
-        tmp_wt = [1,1]
+        #outputs a linear combination of various loss functions. Weight of the loss function can be controlled using tmp_wt
+        tmp_wt = [1]*len(self.losses_list)
         loss = 0
         for i,l in enumerate(self.losses_list):
             try:
@@ -28,6 +27,20 @@ class Loss_fxn():
         return loss
 
 def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, blackbox_config, optim_config, train_config, device, pretrained_path, save_path, baseline_expts=False):
+    '''
+    Inputs:
+    dataset_dict: dictionary with config settings for dataset
+    encoder_config: dictionary with settings for the encoder
+    prompt_encoder_config: dictionary with settings for the prompt encoder
+    decoder_config: dictionary with settings for the decoder
+    blackbox_config: dictionary with settings for the blackbox Foundation Model
+    optim_config: dictionary with settings for the optimization process
+    train_config: dictionary with training settings
+    device: cuda device or cpu on which to train
+    pretrained_path: if resuming training from a checkpoint
+    save_path: location for saving the model
+    baselines_expts: used for comparing with baselines
+    '''
     #set up logger
     logging.basicConfig(filename=os.path.join(save_path,"training_progress.log"),
                     format='%(message)s',
@@ -35,11 +48,9 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
-    # tr_dataloader, val_dataloader = iter(dataloader_dict['train']), iter(dataloader_dict['val'])
     tr_dataset, val_dataset = dataset_dict['train'], dataset_dict['val']
     best_val_loss = 10000
     best_tr_loss = 10000
-    # print("debug: len tr dataset", len(tr_dataset))
 
     num_training_iters = train_config['num_train']
     if baseline_expts:
@@ -55,11 +66,7 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
         if pretrained_path:
             model.decoder.load_state_dict(torch.load(pretrained_path,map_location=device), strict=True)
         print("debug: model loaded")
-
-        
-
         logger.info("model loaded")
-        print(model.decoder)
         num_params = sum(p.numel() for p in model.decoder.parameters())
         print("Number of parameters in the decoder: ", num_params)
 
@@ -74,34 +81,28 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
     loss_fxn = Loss_fxn(losses_list)
 
     print("debug: loss loaded")
+    logger.info("debug: loss loaded")
 
-    if optim_config['name'] == 'global_swarm':
-        w = torch.nn.utils.parameters_to_vector(model.decoder.parameters())
-        N_params = w.shape[0]
-        optimizer = ps.single.GlobalBestPSO(n_particles=optim_config['num_particles'], dimensions=N_params, options=optim_config['options'])
+    #initial performance
+    with torch.no_grad():
+        w1 = torch.nn.utils.parameters_to_vector(model.decoder.parameters())
+        w = w1*0
+        torch.nn.utils.vector_to_parameters(w, model.decoder.parameters())
+        tr_loss, tr_dice = evaluate(tr_dataset, model, train_config, loss_fxn)
+        print("Initial Average loss on the tr set: ", tr_loss)
+        logger.info("Initial Average loss on the tr set: %s", str(tr_loss))
+        print("Initial Average dice on the tr set: ", tr_dice)
+        logger.info("Initial Average dice on the tr set: %s", str(tr_dice))
+        torch.nn.utils.vector_to_parameters(w1, model.decoder.parameters())
 
-        print("Debug:  optimizer loaded")
-
-    #initialized performance
-    # with torch.no_grad():
-    #     w1 = torch.nn.utils.parameters_to_vector(model.decoder.parameters())
-    #     w = w1*0
-    #     torch.nn.utils.vector_to_parameters(w, model.decoder.parameters())
-    #     tr_loss, tr_dice = evaluate(tr_dataset, model, train_config, loss_fxn)
-    #     print("Initial Average loss on the tr set: ", tr_loss)
-    #     logger.info("Initial Average loss on the tr set: %s", str(tr_loss))
-    #     print("Initial Average dice on the tr set: ", tr_dice)
-    #     logger.info("Initial Average dice on the tr set: %s", str(tr_dice))
-    #     torch.nn.utils.vector_to_parameters(w1, model.decoder.parameters())
-
+    #start blackbox adaptation
     geass = train_config['use_geass']
+    #set parameters for GEASS if it is to be used
     strike = 0
     cooldown = 0
     geass_req = 0.001 * num_params
 
     for i in range(1,1+num_training_iters):
-        #TODO properly. get datapoint and add batch size
-
         image = []
         label = []
         points = []
@@ -109,19 +110,15 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
         text = []
         for j in range(train_config['batch_size']):
             data_idx = np.random.choice(len(tr_dataset))
-            # image, point, box, text, label = tr_dataset[data_idx]
             image_j, label_j, _, text_j = tr_dataset[data_idx]
             if not label_j.any():
-                # print(text_j)
-                # print("blank labels here\n")
                 continue
             image_j = image_j.unsqueeze(0).to(device)
             label_j = label_j.unsqueeze(0).to(device)
             image.append(image_j)
             label.append(label_j)
-            # image, label, _, text = next(tr_dataloader)
 
-            #get random positive point if it exists
+            #get random positive point from mask if it exists. Currently only supports point prompts
             if label_j.any() and not train_config['use_only_text']:
                 _,y,x = torch.where(label_j==1)
                 pos_prompts = torch.cat([x.unsqueeze(1),y.unsqueeze(1)],dim=1)
@@ -165,18 +162,18 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
         label = torch.cat(label, dim=0)
         if train_config['use_only_point']:
             points = torch.cat(points,dim=0)
-        # print("debug: points shape ",points.shape)
+
         if baseline_expts:
             w = model.vp
         else:
             w = torch.nn.utils.parameters_to_vector(model.decoder.parameters())
 
+        #whether to initialize the weights of the decoder with zero
         if i==1 and train_config['Zero_Init']:
             w = w*0
 
         if optim_config['name']=='spsa-gc':
             with torch.no_grad():
-                # lr = optim_config['a']/((i + optim_config['o'])**optim_config['alpha'])
                 lr = optim_config['a']*(0.33**((i//300)))
                 lr = lr*train_config['geass_lr_multiplier'] if cooldown>0 else lr
 
@@ -221,12 +218,6 @@ def train(dataset_dict, encoder_config, prompt_encoder_config, decoder_config, b
                     cooldown = 2
                     print(f"Activating Geass... New ck = {ck*train_config['geass_ck_multiplier']} New lr = {lr*train_config['geass_lr_multiplier']}")
 
-        elif optim_config['name']=='global_swarm':
-            with torch.no_grad():
-                cost, _ = global_swarm(model, optimizer, image, points, boxes, text, label, loss_fxn, optim_config['num_particles'], optim_config['options'], num_iters=optim_config['swarm_iters'])
-
-
-        # print(f"Iteration: {i}, Loss: {loss}, dice: {dice}")
         if i%5 == 0:
             print("Iteration ",i)
             logger.info(f"Iteration {i}")
@@ -272,8 +263,6 @@ def evaluate(val_dataset, model, train_config, loss_fxn):
             image = image.unsqueeze(0).to(model.device)
             label = label.unsqueeze(0).to(model.device)
             if not label.any():
-                # print(text)
-                # print("blank labels here\n")
                 continue
             points = []
             boxes = []

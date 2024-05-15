@@ -25,9 +25,7 @@ class BBox_SAM(nn.Module):
         self.transform = self.prompt_mask_generator.transform
 
     def forward(self, img, point=None, box=None, text=None, bs=1, use_sam_actual=False):
-        # print("debug img size to blackbox: ", img.shape)
         with torch.no_grad():
-            # print("debug: batch size ", bs)
             if img.shape[-1]==3:
                 img_size = img.shape[1]
             else:
@@ -35,17 +33,13 @@ class BBox_SAM(nn.Module):
             if point==None and box==None and text==None:
                 #automatic case
                 auto_masks = self.automatic_mask_generator.generate(img)
-                # print("debug auto case masks shape ", len(auto_masks))
                 #masks shape N X H X W
                 masks = np.zeros((img_size,img_size))
                 for am in (auto_masks):
                     masks = (masks + am['segmentation'])
                 masks = masks>0 + 0
-                # print("debug: masks shape final: ", masks.shape)
                 masks = torch.Tensor(masks).unsqueeze(0)
             else:
-                # print('debug: bs ', bs)
-                # print(text)
                 #TODO make this more elegant, currently temporary fix
                 if not use_sam_actual:
                     #support for text not provided in SAM API. Simulated here
@@ -118,5 +112,3 @@ class BBox_SAM(nn.Module):
                     masks = nn.functional.sigmoid(torch.Tensor(masks))
 
             return masks
-
-# class SEEM

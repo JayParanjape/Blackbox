@@ -5,10 +5,8 @@ from datasets.refuge import Refuge_Dataset
 from datasets.rite import RITE_Dataset
 from datasets.endovis import Endovis_Dataset
 from datasets.chestxdet import ChestXDet_Dataset
-from torch.utils.data import DataLoader
 import sys
 import yaml
-# sys.path.append('../endovis17')
 
 def get_data(data_config):
     print(data_config)
@@ -27,9 +25,6 @@ def get_data(data_config):
         print(dataset_sizes)
 
 
-        # dataloader_dict['train'] = DataLoader(dataset_dict['train'], data_config['batch_size'], shuffle=True)
-        # dataloader_dict['val'] = DataLoader(dataset_dict['val'], data_config['batch_size'], shuffle=True)
-
     elif data_config['name']=='KVASIRSEG':
         dataset_dict['train'] = KVASIRSEG_Dataset(data_config, shuffle_list=True, is_train=True, apply_norm=data_config['use_norm'], no_text_mode=data_config['no_text_mode'])
         dataset_dict['val'] = KVASIRSEG_Dataset(data_config, shuffle_list=False, apply_norm=data_config['use_norm'], is_train=False, no_text_mode=data_config['no_text_mode'])
@@ -39,8 +34,6 @@ def get_data(data_config):
         dataset_sizes['val'] = len(dataset_dict['val'])
         dataset_sizes['test'] = len(dataset_dict['test'])
 
-        # dataloader_dict['train'] = DataLoader(dataset_dict['train'], data_config['batch_size'], shuffle=True)
-        # dataloader_dict['val'] = DataLoader(dataset_dict['val'], data_config['batch_size'], shuffle=True)
         print(dataset_sizes)
 
 
@@ -53,8 +46,6 @@ def get_data(data_config):
         dataset_sizes['val'] = len(dataset_dict['val'])
         dataset_sizes['test'] = len(dataset_dict['test'])
 
-        # dataloader_dict['train'] = DataLoader(dataset_dict['train'], data_config['batch_size'], shuffle=True)
-        # dataloader_dict['val'] = DataLoader(dataset_dict['val'], data_config['batch_size'], shuffle=True)
     
     elif data_config['name']=='REFUGE':
         dataset_dict['train'] = Refuge_Dataset(data_config, shuffle_list=True, is_train=True, apply_norm=data_config['use_norm'], no_text_mode=data_config['no_text_mode'])
@@ -67,8 +58,6 @@ def get_data(data_config):
 
         print(dataset_sizes)
 
-        # dataloader_dict['train'] = DataLoader(dataset_dict['train'], data_config['batch_size'], shuffle=True)
-        # dataloader_dict['val'] = DataLoader(dataset_dict['val'], data_config['batch_size'], shuffle=True)
 
     elif data_config['name']=='RITE':
         dataset_dict['train'] = RITE_Dataset(data_config, shuffle_list=True, is_train=True, apply_norm=data_config['use_norm'], no_text_mode=data_config['no_text_mode'])
@@ -81,8 +70,6 @@ def get_data(data_config):
 
         print(dataset_sizes)
 
-        # dataloader_dict['train'] = DataLoader(dataset_dict['train'], data_config['batch_size'], shuffle=True)
-        # dataloader_dict['val'] = DataLoader(dataset_dict['val'], data_config['batch_size'], shuffle=True)
 
     elif data_config['name']=='ENDOVIS':
         dataset_dict['train'] = Endovis_Dataset(data_config, shuffle_list=True, is_train=True, apply_norm=data_config['use_norm'], no_text_mode=data_config['no_text_mode'])
@@ -95,8 +82,6 @@ def get_data(data_config):
 
         print(dataset_sizes)
 
-        # dataloader_dict['train'] = DataLoader(dataset_dict['train'], data_config['batch_size'], shuffle=True)
-        # dataloader_dict['val'] = DataLoader(dataset_dict['val'], data_config['batch_size'], shuffle=True)
 
     elif data_config['name']=='CHESTXDET':
         dataset_dict['train'] = ChestXDet_Dataset(data_config, shuffle_list=True, is_train=True, apply_norm=data_config['use_norm'], no_text_mode=data_config['no_text_mode'])

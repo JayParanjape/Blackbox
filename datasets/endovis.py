@@ -1,20 +1,10 @@
 import random
-import argparse
 import os
-import sys
 import numpy as np
 import pandas as pd
 import torch
-from matplotlib import pyplot as plt
 from PIL import Image
-from torch.utils.data import Dataset, TensorDataset
-from torchvision import datasets, models
-from torchvision import transforms
-from torchvision.transforms import functional as F
-from torch.nn.functional import pad
-from skimage.transform import resize
-import time
-import json
+from torch.utils.data import Dataset
 from data_transforms.endovis_transform import ENDOVIS_Transform
 
 class Endovis_Dataset(Dataset):
@@ -86,7 +76,6 @@ class Endovis_Dataset(Dataset):
             for i,label_name in enumerate(self.label_names):
                 try:
                     lbl_path = os.path.join(self.label_path_list[index],label_name.replace(' ','_')+'_labels',self.img_names[index])
-                    # print("lbl path: ", lbl_path)
                     label_part = torch.Tensor(np.array(Image.open(lbl_path)))
                 except:
                     label_part = torch.zeros(img.shape[1], img.shape[2])
@@ -96,8 +85,6 @@ class Endovis_Dataset(Dataset):
             img, label = self.data_transform(img, label, is_train=self.is_train, apply_norm=self.apply_norm)
             label = (label>=0.5)+0
             label_of_interest = ''
-            # print("img shape: ",img.shape)
-            # print("label shape: ", label.shape)
             
         else:
             try:
