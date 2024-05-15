@@ -1,4 +1,4 @@
-name: dassl
+name: baps
 channels:
   - pytorch
   - nvidia
