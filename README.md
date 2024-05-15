@@ -1,6 +1,9 @@
 # Blackbox Adapter for Prompted Segmentation (BAPS)
 This repository contains the code for "Blackbox Adaptation for Medical Image Segmentation". This work has been accepted at MICCAI 2024****
 
+## Abstract
+In recent years, various large foundation models have been proposed for image segmentation. There models are often trained on large amounts of data corresponding to general computer vision taks.  Hence, these models do not perform well on medical data. There have been some attempts in the literature to perform parameter-efficient finetuning of such foundation models for medical image segmentation. However, these approaches assume that all the parameters of the model are available for adaptation. But, in many cases, these models are released as APIs or blackboxes, with no or limited access to the model parameters and data. In addition, finetuning methods also require a significant amount of compute, which may not be available for the downstream task. At the same time, medical data can't be shared with third-party agents for finetuning due to privacy reasons. To tackle these challenges, we pioneer a blackbox adaptation technique for prompted medical image segmentation, called BAPS. BAPS has two components - (i) An Image-Prompt decoder (IP decoder) module that generates visual prompts given an image and a prompt, and (ii) A Zero Order Optimization (ZOO) Method, called SPSA-GC that is used to update the IP decoder without the need for backpropagating through the foundation model. Thus, our method does not require any knowledge about the foundation model's weights or gradients. We test BAPS on four different modalities and show that our method can improve the original model's performance by around 4%.
+
 ## Environment File
 Create a new conda environment with the config file given in the repository as follows:
 ```
