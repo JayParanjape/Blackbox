@@ -234,9 +234,7 @@
 		<center><h1>Method</h1></center>
 		<tr>
 			<td align="justify">
-                Adaptive SAM uses the same architecture as SAM. However, for training it for a given surgical dataset, we add trainable shift variables(biases) to its image encoder, while keeping the other weights of the encoder frozen. The only trainable parameters in AdaptiveSAM are these shift parameters, norm layers and the mask decoder, which amount to less than 2% of SAM's parameters. This makes AdaptiveSAM more compute efficient and quicker to train.
-                Further, unlike other adaptation methods for SAM which use bounding boxes or text prompts as input, AdaptiveSAM only expects free-form text as a prompt. This can be as simple as the label name. Hence, it does not require medical expertise to use unlike other methods like MedSAM or MedSAM Adaptor. 
-                The text is converted to embeddings using CLIP, followed by an additional trainable transform called the Text Affine Layer. Since CLIP is not trained on medical terminology, it is expected to perform poorly with labels from the surgery corpus. Hence, AdaptiveSAM learns a lightweight affine transformation to make the CLIP embeddings more discriminative. The mask decoder then fuses these transformed text embeddings along with the image encoder output to produce a mask corresponding to the text prompt.   
+                Blackbox Adapter for Prompted Segmentation (BAPS) comprises of a pretrained image encoder and prompt encoder, followed by a trainable Image-Prompt Decoder. Since many foundation models are promptable, BAPS takes in an image and a point prompt and uses them to generate a per-pixel prompt. The image encoder and prompt encoder generate embeddings from the image and the prompt respectively. These are concatenated and passed to the IP decoder, which is the only trainable module. The output from the decoder is added to the image and is passed to the blackbox FM along with the prompt. The IP decoder is trained using a zero shot optimization method called SPSA-GC, which estimates gradients using two forward passes wit perturbed weights.
 			</td>
 		</tr>
 	</table>
@@ -254,7 +252,7 @@
 		</tr>
         <tr>
 			<td align="justify">
-				Adaptive SAM provides greater control than the original SAM through text prompts. Regular SAM without any prompts(second column) segments everything without any notion of knowing which mask represents which class. Further, for AdaptiveSAM, there is no need for expert intervention through points or bounding boxes as the object label is all it needs to segment. While original SAM also has the capability of text prompts(as shown in the third column), we show that our method greatly improves upon this.
+				
 			</td>
 		</tr>
 	</table>
