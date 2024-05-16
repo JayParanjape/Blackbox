@@ -252,7 +252,7 @@
 		</tr>
         <tr>
 			<td align="justify">
-				
+				Qualitative Results on all the datasets. GT - ground truth, VP - visual prompting. The green dot in the image denotes the point prompt given to the blackbox foundation model. Among other gradient free methods, BAPS is able to generate better predictions.
 			</td>
 		</tr>
 	</table>
@@ -288,9 +288,7 @@
 		</tr>
         <tr>
 			<td align="justify">
-				From the top left, in clockwise order, image, ground truth, prediction with the text prompt ”Right Large Needle Driver” and prediction with the text prompt ”Left Large Needle Driver”.
-                In the left image, there are two needle drivers. Adaptive SAM can learn to represent complex queries like Left/Right Large Needle Driver and only segments the corresponding instrument.
-                In the right image, only the right instrument is present and hence, Adaptive SAM correctly outputs a blank mask for the query "Left Large Needle Driver".
+				Overview of SPSA-GEASS, an additional modification we propose over SPSA-GC. Since the FM is already pretrained extensively, it might happen that during adaptation, it gets stuck at a local minima. In such a scenario, the estimated gradient is close to zero and the updates cannot occur. Hence, SPSA-GEASS increases the learning rate if the magnitude of gradient is below a certain threshold for k1 epochs that can sometimes aid in thelearning process. It consists of two parameters - strike and cooldown. The system starts at strike=0. If the estimated gradient is greater than the threshold, strike increases, or else the system reverts to the original state. If strike reaches k_1, the learning rate and perturbation step parameter increase significantly. Then, the cooldown reduces every iteration until 0. After this, the system returns to its initial state.	
 			</td>
 		</tr>
 	</table>
