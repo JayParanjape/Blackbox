@@ -1,0 +1,342 @@
+<script src="http://www.google.com/jsapi" type="text/javascript"></script> 
+<script type="text/javascript">google.load("jquery", "1.3.2");</script>
+
+<style type="text/css">
+	body {
+		font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; 
+		font-weight:300;
+		font-size:18px;
+		margin-left: auto;
+		margin-right: auto;
+		width: 1100px;
+        text-align: justify;
+	}
+	
+	h1 {
+		font-size:32px;
+		font-weight:300;
+	}
+	
+	.disclaimerbox {
+		background-color: #eee;		
+		border: 1px solid #eeeeee;
+		border-radius: 10px ;
+		-moz-border-radius: 10px ;
+		-webkit-border-radius: 10px ;
+		padding: 20px;
+	}
+
+	video.header-vid {
+		height: 140px;
+		border: 1px solid black;
+		border-radius: 10px ;
+		-moz-border-radius: 10px ;
+		-webkit-border-radius: 10px ;
+	}
+	
+	img.header-img {
+		height: 140px;
+		border: 1px solid black;
+		border-radius: 10px ;
+		-moz-border-radius: 10px ;
+		-webkit-border-radius: 10px ;
+	}
+	
+	img.rounded {
+		border: 1px solid #eeeeee;
+		border-radius: 10px ;
+		-moz-border-radius: 10px ;
+		-webkit-border-radius: 10px ;
+	}
+	
+	a:link,a:visited
+	{
+		color: #1367a7;
+		text-decoration: none;
+	}
+	a:hover {
+		color: #208799;
+	}
+	
+	td.dl-link {
+		height: 160px;
+		text-align: center;
+		font-size: 22px;
+	}
+	
+	.layered-paper-big { /* modified from: http://css-tricks.com/snippets/css/layered-paper/ */
+		box-shadow:
+		0px 0px 1px 1px rgba(0,0,0,0.35), /* The top layer shadow */
+		5px 5px 0 0px #fff, /* The second layer */
+		5px 5px 1px 1px rgba(0,0,0,0.35), /* The second layer shadow */
+		10px 10px 0 0px #fff, /* The third layer */
+		10px 10px 1px 1px rgba(0,0,0,0.35), /* The third layer shadow */
+		15px 15px 0 0px #fff, /* The fourth layer */
+		15px 15px 1px 1px rgba(0,0,0,0.35), /* The fourth layer shadow */
+		20px 20px 0 0px #fff, /* The fifth layer */
+		20px 20px 1px 1px rgba(0,0,0,0.35), /* The fifth layer shadow */
+		25px 25px 0 0px #fff, /* The fifth layer */
+		25px 25px 1px 1px rgba(0,0,0,0.35); /* The fifth layer shadow */
+		margin-left: 10px;
+		margin-right: 45px;
+	}
+
+	.paper-big { /* modified from: http://css-tricks.com/snippets/css/layered-paper/ */
+		box-shadow:
+		0px 0px 1px 1px rgba(0,0,0,0.35); /* The top layer shadow */
+
+		margin-left: 10px;
+		margin-right: 45px;
+	}
+
+
+	.layered-paper { /* modified from: http://css-tricks.com/snippets/css/layered-paper/ */
+		box-shadow:
+		0px 0px 1px 1px rgba(0,0,0,0.35), /* The top layer shadow */
+		5px 5px 0 0px #fff, /* The second layer */
+		5px 5px 1px 1px rgba(0,0,0,0.35), /* The second layer shadow */
+		10px 10px 0 0px #fff, /* The third layer */
+		10px 10px 1px 1px rgba(0,0,0,0.35); /* The third layer shadow */
+		margin-top: 5px;
+		margin-left: 10px;
+		margin-right: 30px;
+		margin-bottom: 5px;
+	}
+	
+	.vert-cent {
+		position: relative;
+		top: 50%;
+		transform: translateY(-50%);
+	}
+	
+	hr
+	{
+		border: 0;
+		height: 1px;
+		background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+	}
+</style>
+
+<html>
+<head>
+	<title>Blackbox Adaptation for Medical Image Segmentation</title>
+	<meta property="og:image" content="Path to my teaser.png"/> <!-- Facebook automatically scrapes this. Go to https://developers.facebook.com/tools/debug/ if you update and want to force Facebook to rescrape. -->
+	<meta property="og:title" content="Blackbox Adaptation for Medical Image Segmentation" />
+	<meta property="og:description" content="Blackbox Adaptation for Medical Image Segmentation" />
+
+	<!-- Get from Google Analytics -->
+	<!-- Global site tag (gtag.js) - Google Analytics -->
+	<script async src=""></script> 
+	<script>
+		window.dataLayer = window.dataLayer || [];
+		function gtag(){dataLayer.push(arguments);}
+		gtag('js', new Date());
+
+		gtag('config', 'UA-75863369-6');
+	</script>
+</head>
+
+<body>
+	<br>
+	<center>
+		<span style="font-size:36px">Blackbox Adaptation for Medical Image Segmentation</span>
+		<table align=center width=600px>
+			<table align=center width=800px>
+				<tr>
+					<td align=center colspan="2">
+						<center>
+							<span style="font-size:24px"><a href="https://scholar.google.com/citations?user=BcBltw8AAAAJ&hl=en">Jay N. Paranjape</a></span>
+						</center>
+					</td>
+					<td align=center colspan="2">
+						<center>
+							<span style="font-size:24px"><a href="https://www.hopkinsmedicine.org/profiles/details/shameema-sikder">Shameema Sikder</a></span>
+						</center>
+					</td>
+                    <td align=center colspan="2">
+						<center>
+							<span style="font-size:24px"><a href="https://malonecenter.jhu.edu/people/swaroop-vedula/">S. Swaroop Vedula</a></span>
+						</center>
+					</td>
+                    <td align=center colspan="2">
+						<center>
+							<span style="font-size:24px"><a href="https://scholar.google.com/citations?user=AkEXTbIAAAAJ&hl=en">Vishal M. Patel</a></span>
+						</center>
+					</td>
+				</tr>
+                <tr>
+					<td align=center colspan="10">
+						<center>
+							<span style="font-size:24px"><a href="">Johns Hopkins University</a></span>
+						</center>
+					</td>
+                </tr>
+			</table>
+			<table align=center width=250px>
+				<tr>
+					<td align=center width=120px>
+						<center>
+							<span style="font-size:24px"><a href='tbf'>[Paper]</a></span>
+						</center>
+					</td>
+					<td align=center width=120px>
+						<center>
+							<span style="font-size:24px"><a href='https://github.com/JayParanjape/Blackbox'>[GitHub]</a></span><br>
+						</center>
+					</td>
+				</tr>
+			</table>
+		</table>
+	</center>
+
+	<center>
+		<table align=center width=850px>
+			<tr>
+				<td width=260px>
+					<center>
+						<img class="round" style="width:850px" src="./resources/intro_fig.png"/>
+					</center>
+				</td>
+			</tr>
+		</table>
+		<table>
+			<tr>
+				(a) General finetuning of Foundation Models (FM) (b) Common Adaptation Methods for FM (c) BAPS  
+			</tr>
+		</table>
+		<hr>
+
+	<table align=center width=850px>
+		<center><h1>Abstract</h1></center>
+		<tr>
+			<td align="justify">
+				In recent years, various large foundation models have been proposed for image segmentation. There models are often trained on large amounts of data corresponding to general computer vision taks.  Hence, these models do not perform well on medical data. There have been some attempts in the literature to perform parameter-efficient finetuning of such foundation models for medical image segmentation. However, these approaches assume that all the parameters of the model are available for adaptation. But, in many cases, these models are released as APIs or blackboxes, with no or limited access to the model parameters and data. In addition, finetuning methods also require a significant amount of compute, which may not be available for the downstream task. At the same time, medical data can't be shared with third-party agents for finetuning due to privacy reasons. To tackle these challenges, we pioneer a blackbox adaptation technique for prompted medical image segmentation, called BAPS. BAPS has two components - (i) An Image-Prompt decoder (IP decoder) module that generates visual prompts given an image and a prompt, and (ii) A Zero Order Optimization (ZOO) Method, called SPSA-GC that is used to update the IP decoder without the need for backpropagating through the foundation model. Thus, our method does not require any knowledge about the foundation model's weights or gradients. We test BAPS on four different modalities and show that our method can improve the original model's performance by around 4%.
+			</td>
+		</tr>
+	</table>
+	<br>
+	<hr>
+
+		<table align=center width=850px>
+			<tr>
+				<td width=260px>
+					<center>
+						<img class="round" style="width:850px" src="./resources/arch.png"/>
+					</center>
+				</td>
+			</tr>
+		</table>
+	</center>
+
+	
+
+    <table align=center width=850px>
+		<center><h1>Method</h1></center>
+		<tr>
+			<td align="justify">
+                Adaptive SAM uses the same architecture as SAM. However, for training it for a given surgical dataset, we add trainable shift variables(biases) to its image encoder, while keeping the other weights of the encoder frozen. The only trainable parameters in AdaptiveSAM are these shift parameters, norm layers and the mask decoder, which amount to less than 2% of SAM's parameters. This makes AdaptiveSAM more compute efficient and quicker to train.
+                Further, unlike other adaptation methods for SAM which use bounding boxes or text prompts as input, AdaptiveSAM only expects free-form text as a prompt. This can be as simple as the label name. Hence, it does not require medical expertise to use unlike other methods like MedSAM or MedSAM Adaptor. 
+                The text is converted to embeddings using CLIP, followed by an additional trainable transform called the Text Affine Layer. Since CLIP is not trained on medical terminology, it is expected to perform poorly with labels from the surgery corpus. Hence, AdaptiveSAM learns a lightweight affine transformation to make the CLIP embeddings more discriminative. The mask decoder then fuses these transformed text embeddings along with the image encoder output to produce a mask corresponding to the text prompt.   
+			</td>
+		</tr>
+	</table>
+	<br>
+	<hr>
+
+    <table align=center width=850px>
+		<center><h1>Results</h1></center>
+		<tr>
+			<td width=260px>
+                <center>
+                    <img class="round" style="width:850px" src="./resources/results_nobvp.png"/>
+                </center>
+            </td>
+		</tr>
+        <tr>
+			<td align="justify">
+				Adaptive SAM provides greater control than the original SAM through text prompts. Regular SAM without any prompts(second column) segments everything without any notion of knowing which mask represents which class. Further, for AdaptiveSAM, there is no need for expert intervention through points or bounding boxes as the object label is all it needs to segment. While original SAM also has the capability of text prompts(as shown in the third column), we show that our method greatly improves upon this.
+			</td>
+		</tr>
+	</table>
+	<br>
+	<hr>
+
+    <table align=center width=850px>
+		<center><h1>Visualizing Modified Images</h1></center>
+		<tr>
+			<td width=260px>
+                <center>
+                    <img  class="round" style="width:850px" src="./resources/diff.png"/>
+                </center>
+            </td>
+		</tr>
+        <tr>
+			<td align="justify">
+				Adaptive SAM is not restricted to the surgical domain. The training strategy and architectural changes can be used for any dataset, making our method generalizable. This can be seen iin our results on different modalities like X-Ray and Ultrasound.
+			</td>
+		</tr>
+	</table>
+	<br>
+	<hr>
+
+    <table align=center width=850px>
+		<center><h1>SPSA-GEASS</h1></center>
+		<tr>
+			<td width=260px>
+                <center>
+                    <img class="round" style="width:850px" src="./resources/geass.png"/>
+                </center>
+            </td>
+		</tr>
+        <tr>
+			<td align="justify">
+				From the top left, in clockwise order, image, ground truth, prediction with the text prompt ”Right Large Needle Driver” and prediction with the text prompt ”Left Large Needle Driver”.
+                In the left image, there are two needle drivers. Adaptive SAM can learn to represent complex queries like Left/Right Large Needle Driver and only segments the corresponding instrument.
+                In the right image, only the right instrument is present and hence, Adaptive SAM correctly outputs a blank mask for the query "Left Large Needle Driver".
+			</td>
+		</tr>
+	</table>
+	<br>
+	<hr>
+
+	<table align=center width=850px>
+		<center><h1>Paper and Supplementary Material</h1></center>
+		<tr>
+			<td><a href="tbf"><img class="layered-paper-big" style="height:175px" src="./resources/paper.png"/></a></td>
+			<td><span style="font-size:14pt"><br>
+				<b>AdaptiveSAM: Towards Efficient Tuning of SAM for Surgical Scene Segmentation</b><br>
+				<br>
+				(hosted on <a href="">ArXiv</a>)<br>
+				<!-- (<a href="./resources/camera-ready.pdf">camera ready</a>)<br> -->
+				<span style="font-size:4pt"><a href=""><br></a>
+				</span>
+			</td>
+		</tr>
+	</table>
+	<br>
+
+	<table align=center width=600px>
+		<tr>
+			<td><span style="font-size:14pt"><center>
+				<a href="./resources/bibtex.txt">[Bibtex]</a>
+			</center></td>
+		</tr>
+	</table>
+
+	<hr>
+	<br>
+
+	<table align=center width=900px>
+		<tr>
+			<td width=400px>
+				<left>
+					<center><h1>Acknowledgements</h1></center>
+					This template was originally made by <a href="http://web.mit.edu/phillipi/">Phillip Isola</a> and <a href="http://richzhang.github.io/">Richard Zhang</a> for a <a href="http://richzhang.github.io/colorization/">colorful</a> ECCV project; the code can be found <a href="https://github.com/richzhang/webpage-template">here</a>.
+				</left>
+			</td>
+		</tr>
+	</table>
+
+<br>
+</body>
+</html>
