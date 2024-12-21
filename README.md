@@ -21,7 +21,7 @@ conda activate baps
 - configs/default.yml - config file for defining various settings
 
 ## Link to model checkpoints
-Coming Soon
+[GDrive](https://drive.google.com/drive/folders/1bcQiwMJHjTt6DLuOCAnpcW3-KrgTDmMm?usp=sharing)
 
 ## Data Structure
 The data structure for different datasets is defined by datasets/< dataset_name.py >. In general, the structure is as follows:
