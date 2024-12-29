@@ -47,9 +47,9 @@ class ISIC2018_Dataset(Dataset):
             if self.is_test:
                 imgs_path = os.path.join(self.root_path, 'ISIC2018_Task1-2_Test_Input')
                 labels_path = os.path.join(self.root_path, 'ISIC2018_Task1_Test_GroundTruth')
-
-            imgs_path = os.path.join(self.root_path, 'ISIC2018_Task1-2_Validation_Input')
-            labels_path = os.path.join(self.root_path, 'ISIC2018_Task1_Validation_GroundTruth')
+            else:
+                imgs_path = os.path.join(self.root_path, 'ISIC2018_Task1-2_Validation_Input')
+                labels_path = os.path.join(self.root_path, 'ISIC2018_Task1_Validation_GroundTruth')
 
         for img in os.listdir(imgs_path):
             if (('jpg' not in img) and ('jpeg not in img') and ('png' not in img)):
